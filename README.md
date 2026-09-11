@@ -2,11 +2,15 @@
 
 **Meeting notes that show their work.**
 
-![Ledger Notes — a meeting's traceability ledger: five decisions and actions generated, two traced to the transcript, two from the user's own jottings](docs/shot-ledger.png)
+![Ledger Notes — AI notes you can actually defend](docs/hero.png)
 
 [**Download for Mac**](https://github.com/juliopessan/Ledger-Notes/releases/latest) · [Landing page](https://juliopessan.github.io/Ledger-Notes/)
 
 A local-first AI meeting notepad. The name comes from the design system the UI is built on: the transcript is the *measured* claim (what was actually said), AI-generated notes are the *assertion* — and the interface never lets the two look alike.
+
+Every meeting opens with the same accounting: how much the model produced, and how much of it traces back to the transcript. The gap between the two bars is the point.
+
+![A meeting's traceability ledger: five decisions and actions generated, two traced to the transcript, two from the user's own jottings](docs/shot-ledger.png)
 
 - Records mic + system audio (the whole call, not just your voice)
 - Jot sparse notes while the meeting runs — each line becomes an anchor the transcript fills in around, and your raw jottings are preserved verbatim in their own tab
