@@ -45,30 +45,19 @@ export function useRecorder(): UseRecorderResult {
 
         if (opts.captureSystemAudio) {
           try {
-            const sources = await window.api.audio.listDesktopSources()
-            const primary = sources[0]
-            if (primary) {
-              const systemStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                  mandatory: {
-                    chromeMediaSource: 'desktop'
-                  }
-                } as unknown as MediaTrackConstraints,
-                video: {
-                  mandatory: {
-                    chromeMediaSource: 'desktop',
-                    chromeMediaSourceId: primary.id,
-                    maxWidth: 1,
-                    maxHeight: 1
-                  }
-                } as unknown as MediaTrackConstraints
-              })
-              systemStream.getVideoTracks().forEach((t) => t.stop())
-              const audioOnlyTracks = systemStream.getAudioTracks()
-              if (audioOnlyTracks.length > 0) {
-                streamsRef.current.push(systemStream)
-                audioCtx.createMediaStreamSource(new MediaStream(audioOnlyTracks)).connect(destination)
-              }
+            // The main process answers this with the screen source plus
+            // loopback audio. Video is requested only because the request
+            // needs a source — it is stopped immediately below, and only the
+            // audio track is mixed in.
+            const systemStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: true
+            })
+            systemStream.getVideoTracks().forEach((t) => t.stop())
+            const audioOnlyTracks = systemStream.getAudioTracks()
+            if (audioOnlyTracks.length > 0) {
+              streamsRef.current.push(systemStream)
+              audioCtx.createMediaStreamSource(new MediaStream(audioOnlyTracks)).connect(destination)
             }
           } catch (sysErr) {
             console.warn('Could not capture system audio:', sysErr)

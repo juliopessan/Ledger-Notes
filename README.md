@@ -96,7 +96,7 @@ python3 -m http.server 4173 --directory docs
 - The "untraceable items" check is a simple word-overlap heuristic, not a semantic check
 - The no-AI fallback (local heuristic) produces simpler notes than a language model would — key points are sentences sampled from the transcript, not a real synthesis
 - The packaged build (`dist:mac`) doesn't yet bundle a relocatable Python runtime, and isn't code-signed — see "Building for distribution" above
-- **Electron is pinned at 33 and carries open advisories.** `npm audit` reports them against the app's own runtime, not just build tooling. Most of them need attacker-controlled web content, iframes, custom protocols or extensions — none of which this app does, since it only ever loads its own bundled HTML — but two concern `contextIsolation` and `contextBridge`, which it does rely on. The fix is a major upgrade to Electron 39+, and that touches the `desktopCapturer` + `getUserMedia({ chromeMediaSource: 'desktop' })` path that captures system audio. It should be done together with an end-to-end recording test, not blind
+- **System audio capture has not been re-tested since the Electron 44 upgrade.** The upgrade cleared the advisories that used to be open against Electron 33, and it also required migrating system audio off `getUserMedia({ chromeMediaSource: 'desktop' })`, an API newer Electron removed, onto `session.setDisplayMediaRequestHandler` with `audio: 'loopback'`. Lint, typecheck, build and app startup all pass, but a real recording — mic plus loopback — has not been run end to end. Do that before trusting a release
 
 ## A note on SQLite
 

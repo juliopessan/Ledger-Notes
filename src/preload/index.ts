@@ -30,10 +30,6 @@ const api = {
       return () => ipcRenderer.removeListener('meetings:progress', listener)
     }
   },
-  audio: {
-    listDesktopSources: (): Promise<{ id: string; name: string }[]> =>
-      ipcRenderer.invoke('audio:listDesktopSources')
-  },
   templates: {
     list: (): Promise<NoteTemplate[]> => ipcRenderer.invoke('templates:list')
   },

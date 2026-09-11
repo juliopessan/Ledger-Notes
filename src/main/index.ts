@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, desktopCapturer } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, desktopCapturer, session } from 'electron'
 import { join } from 'path'
 import { writeFile } from 'fs/promises'
 import { v4 as uuidv4 } from 'uuid'
@@ -50,8 +50,38 @@ function createWindow(): void {
   }
 }
 
+/**
+ * Grants the renderer's getDisplayMedia() call the screen source plus loopback
+ * audio, which is how system audio — the other participants on the call — gets
+ * into the recording.
+ *
+ * The video track is requested only because a display-media request needs a
+ * source; the renderer stops it immediately and keeps the audio. Asking for
+ * audio alone is not a supported shape for this handler.
+ */
+function registerDisplayMediaHandler(): void {
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ['screen'] })
+        .then((sources) => {
+          if (sources.length === 0) {
+            callback({})
+            return
+          }
+          callback({ video: sources[0], audio: 'loopback' })
+        })
+        .catch(() => callback({}))
+    },
+    // The system picker would make the user choose a window every recording;
+    // we always want the whole screen's audio, so we resolve it ourselves.
+    { useSystemPicker: false }
+  )
+}
+
 app.whenReady().then(() => {
   registerIpcHandlers()
+  registerDisplayMediaHandler()
   createWindow()
 
   app.on('activate', function () {
@@ -189,11 +219,6 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('templates:list', () => NOTE_TEMPLATES)
-
-  ipcMain.handle('audio:listDesktopSources', async () => {
-    const sources = await desktopCapturer.getSources({ types: ['screen'] })
-    return sources.map((s) => ({ id: s.id, name: s.name }))
-  })
 
   ipcMain.handle('settings:get', () => settingsStore.store)
 
