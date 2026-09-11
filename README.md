@@ -6,7 +6,7 @@
 
 [**Download for Mac**](https://github.com/juliopessan/Ledger-Notes/releases/latest) · [Landing page](https://juliopessan.github.io/Ledger-Notes/)
 
-A local-first AI meeting notepad inspired by [Granola](https://www.granola.ai/). The name comes from the design system the UI is built on: the transcript is the *measured* claim (what was actually said), AI-generated notes are the *assertion* — and the interface never lets the two look alike.
+A local-first AI meeting notepad. The name comes from the design system the UI is built on: the transcript is the *measured* claim (what was actually said), AI-generated notes are the *assertion* — and the interface never lets the two look alike.
 
 - Records mic + system audio (the whole call, not just your voice)
 - Jot sparse notes while the meeting runs — each line becomes an anchor the transcript fills in around, and your raw jottings are preserved verbatim in their own tab
