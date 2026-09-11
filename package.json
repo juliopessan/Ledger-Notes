@@ -1,7 +1,7 @@
 {
   "name": "ledger-notes",
   "version": "0.1.0",
-  "description": "The AI notepad for back-to-back meetings — local-first, transcrição e registro fiéis, notas geradas claramente distintas",
+  "description": "Meeting notes that show their work — local-first, transcrição fiel e notas geradas claramente distintas",
   "main": "./out/main/index.js",
   "author": "Julio Pessan",
   "private": true,
@@ -11,6 +11,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "electron-builder install-app-deps",
     "dist:mac": "electron-vite build && electron-builder --mac"
@@ -25,18 +26,22 @@
   "devDependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "@eslint/js": "^9.39.5",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.1",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.0.2",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.70.0",
     "vite": "^5.4.11"
   }
 }

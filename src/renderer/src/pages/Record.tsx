@@ -20,9 +20,12 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
   const [templates, setTemplates] = useState<NoteTemplate[]>([])
   const [templateId, setTemplateId] = useState('')
   const [captureSystemAudio, setCaptureSystemAudio] = useState(true)
+  const [userNotes, setUserNotes] = useState('')
+  const [savedAt, setSavedAt] = useState<number | null>(null)
   const { isRecording, seconds, level, start, stop, error } = useRecorder()
   const navigate = useNavigate()
   const startedRef = useRef(false)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     window.api.settings.get().then((s) => {
@@ -34,8 +37,23 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
 
   const selectedTemplate = templates.find((t) => t.id === templateId)
 
+  // Saves what is being typed shortly after the person stops. Meeting notes
+  // cannot depend on ending the recording cleanly: if the app dies mid-call,
+  // whatever was already written has to be on disk.
+  const handleNotesChange = (value: string): void => {
+    setUserNotes(value)
+    if (!meetingId) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      window.api.meetings
+        .updateUserNotes(meetingId, value)
+        .then(() => setSavedAt(Date.now()))
+        .catch((e) => console.error(e))
+    }, 700)
+  }
+
   const handleStart = async (): Promise<void> => {
-    const meeting = await window.api.meetings.create(title || 'Reunião sem título', templateId)
+    const meeting = await window.api.meetings.create(title || 'Untitled meeting', templateId)
     setMeetingId(meeting.id)
     onCreated()
     startedRef.current = true
@@ -46,6 +64,9 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
     if (!meetingId) return
     const result = await stop()
     if (!result) return
+    // Flush the last typed passage before processing, without waiting on the debounce.
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    await window.api.meetings.updateUserNotes(meetingId, userNotes)
     await window.api.meetings.saveAudio(meetingId, result.buffer, result.durationSeconds)
     navigate(`/meeting/${meetingId}`)
     window.api.meetings.processRecording(meetingId).catch((e) => console.error(e))
@@ -56,22 +77,22 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
     return (
       <div className="center-state">
         <p className="eyebrow" style={{ margin: 0 }}>
-          Nova gravação
+          New recording
         </p>
-        <h1 className="page-title">Antes de começar</h1>
+        <h1 className="page-title">Before you start</h1>
 
         <div className="field">
-          <label>Título da reunião</label>
+          <label>Meeting title</label>
           <input
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Alinhamento semanal — squad Produto"
+            placeholder="e.g. Weekly sync — Product squad"
           />
         </div>
 
         <div className="field">
-          <label>Tipo de reunião</label>
+          <label>Meeting type</label>
           <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
@@ -81,7 +102,7 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
           </select>
           {selectedTemplate && (
             <span className="hint">
-              {selectedTemplate.description} Seções:{' '}
+              {selectedTemplate.description} Sections:{' '}
               {selectedTemplate.sections.map((s) => s.heading).join(' · ')}
             </span>
           )}
@@ -95,38 +116,54 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
               onChange={(e) => setCaptureSystemAudio(e.target.checked)}
               style={{ marginRight: '8px' }}
             />
-            Capturar também o áudio do sistema (outros participantes na chamada)
+            Also capture system audio (the other participants on the call)
           </label>
           <span className="hint">
-            No macOS é necessário conceder permissão de Gravação de Tela ao app na primeira vez.
+            On macOS you have to grant the app Screen Recording permission the first time.
           </span>
         </div>
 
         {error && <p style={{ color: 'var(--clay-deep)', fontSize: '13px' }}>{error}</p>}
 
         <button className="btn btn-record" onClick={handleStart}>
-          ● Começar a gravar
+          ● Start recording
         </button>
       </div>
     )
   }
 
   return (
-    <div className="center-state">
-      <div className="row">
+    <div className="recording-view">
+      <div className="recording-bar">
         <span className="mic-dot" />
-        <p className="eyebrow" style={{ margin: 0 }}>
-          Gravando
-        </p>
+        <span className="recording-clock">{formatTime(seconds)}</span>
+        <LevelMeter level={level} />
+        <span className="recording-title">{title || 'Untitled meeting'}</span>
+        <button className="btn btn-primary" onClick={handleStop}>
+          ■ Stop and transcribe
+        </button>
       </div>
-      <div className="record-timer">{formatTime(seconds)}</div>
-      <LevelMeter level={level} />
-      <p className="subtitle" style={{ margin: 0 }}>
-        {title || 'Reunião sem título'}
-      </p>
-      <button className="btn btn-primary" onClick={handleStop}>
-        ■ Encerrar e transcrever
-      </button>
+
+      <div className="jot-head">
+        <p className="eyebrow" style={{ margin: 0 }}>
+          Your notes
+        </p>
+        <span className="jot-status">
+          {savedAt ? 'saved' : userNotes ? 'saving…' : 'nothing written yet'}
+        </span>
+      </div>
+
+      <textarea
+        className="jot-editor"
+        autoFocus
+        value={userNotes}
+        onChange={(e) => handleNotesChange(e.target.value)}
+        placeholder={
+          'Jot loosely — topics, names, numbers, whatever must not slip.\n\n' +
+          'Afterwards the transcript fills in the rest around what you marked here.\n' +
+          'This text is kept exactly as you wrote it.'
+        }
+      />
     </div>
   )
 }

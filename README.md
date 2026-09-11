@@ -1,18 +1,20 @@
 # Ledger Notes
 
-**The AI notepad for back-to-back meetings.**
+**Meeting notes that show their work.**
 
-![Ledger Notes — meeting view with the traceability ledger](docs/shot-ledger.png)
+![Ledger Notes — a meeting's traceability ledger: five decisions and actions generated, two traced to the transcript, two from the user's own jottings](docs/shot-ledger.png)
 
 [**Download for Mac**](https://github.com/juliopessan/Ledger-Notes/releases/latest) · [Landing page](https://juliopessan.github.io/Ledger-Notes/)
 
 A local-first AI meeting notepad inspired by [Granola](https://www.granola.ai/). The name comes from the design system the UI is built on: the transcript is the *measured* claim (what was actually said), AI-generated notes are the *assertion* — and the interface never lets the two look alike.
 
 - Records mic + system audio (the whole call, not just your voice)
+- Jot sparse notes while the meeting runs — each line becomes an anchor the transcript fills in around, and your raw jottings are preserved verbatim in their own tab
 - Transcribes locally with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — audio never leaves your machine
+- Six note templates by meeting type (general, 1:1, standup, client call, interview, planning); switch one after the fact and the notes are rewritten from the same transcript
 - Generates structured notes (summary, decisions, action items) using Claude or GPT — bring your own API key
 - No API key configured? It still produces basic notes via a local heuristic (extracted straight from the transcript, never invented) instead of blocking you
-- Flags any note item that couldn't be matched back to the transcript (a lightweight hallucination check), using the **Ledger** design system: mint = traced to the transcript, clay = unconfirmed
+- Flags any note item that couldn't be matched back to the transcript (a lightweight hallucination check), using the **Ledger** design system: mint = traced to the transcript, clay = unconfirmed. An item that came from your own jottings rather than the recording is counted separately — your assertion is a different kind of claim than a quote, and blaming the model for it would be wrong
 
 ## Getting started
 
@@ -61,6 +63,16 @@ Produces an unsigned `.dmg` for Apple Silicon in `dist/`. The `python/` sidecar 
 - It is **not signed or notarized** — signing requires a paid Apple Developer ID. On first launch macOS will refuse to open it; right-click the app → Open → Open to get past Gatekeeper.
 - Python with `faster-whisper` must be present on the machine for transcription to work. Bundling a self-contained Python runtime (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) is still open.
 
+## Development
+
+```bash
+npm run lint       # ESLint, zero warnings tolerated
+npm run typecheck  # tsc over the main/preload and renderer projects
+npm run build      # production bundle
+```
+
+CI runs all three on every push and pull request, plus a check that the Python sidecar imports `faster-whisper` and exits the way `transcription.ts` expects (`.github/workflows/ci.yml`).
+
 ## Landing page
 
 `docs/index.html` is a static landing page, served by GitHub Pages from the `main` branch `/docs` folder. Nothing to build — open the file, or serve the folder:
@@ -84,6 +96,7 @@ python3 -m http.server 4173 --directory docs
 - The "untraceable items" check is a simple word-overlap heuristic, not a semantic check
 - The no-AI fallback (local heuristic) produces simpler notes than a language model would — key points are sentences sampled from the transcript, not a real synthesis
 - The packaged build (`dist:mac`) doesn't yet bundle a relocatable Python runtime, and isn't code-signed — see "Building for distribution" above
+- **Electron is pinned at 33 and carries open advisories.** `npm audit` reports them against the app's own runtime, not just build tooling. Most of them need attacker-controlled web content, iframes, custom protocols or extensions — none of which this app does, since it only ever loads its own bundled HTML — but two concern `contextIsolation` and `contextBridge`, which it does rely on. The fix is a major upgrade to Electron 39+, and that touches the `desktopCapturer` + `getUserMedia({ chromeMediaSource: 'desktop' })` path that captures system audio. It should be done together with an end-to-end recording test, not blind
 
 ## A note on SQLite
 

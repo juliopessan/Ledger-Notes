@@ -83,12 +83,17 @@ function registerIpcHandlers(): void {
     return getMeeting(id)
   })
 
+  ipcMain.handle('meetings:updateUserNotes', (_e, id: string, userNotes: string) => {
+    updateMeeting(id, { userNotes })
+    return getMeeting(id)
+  })
+
   ipcMain.handle('meetings:create', (_e, title: string, templateId?: string) => {
     const id = uuidv4()
     const now = new Date().toISOString()
     const meeting: Meeting = {
       id,
-      title: title || 'Reunião sem título',
+      title: title || 'Untitled meeting',
       createdAt: now,
       updatedAt: now,
       durationSeconds: 0,
@@ -116,7 +121,7 @@ function registerIpcHandlers(): void {
   ipcMain.handle('meetings:processRecording', async (event, id: string) => {
     const meeting = getMeeting(id)
     if (!meeting || !meeting.audioPath) {
-      throw new Error('Áudio da reunião não encontrado.')
+      throw new Error('Meeting audio not found.')
     }
 
     const send = (message: string): void => {
@@ -125,12 +130,19 @@ function registerIpcHandlers(): void {
 
     try {
       updateMeeting(id, { status: 'transcribing' })
-      send('Transcrevendo áudio localmente com Whisper...')
+      send('Transcribing audio locally with Whisper…')
       const transcript = await transcribeAudio(meeting.audioPath, send)
       updateMeeting(id, { transcript, status: 'generating_notes' })
 
-      send('Gerando notas estruturadas com IA...')
-      const notesMarkdown = await generateMeetingNotes(transcript, meeting.templateId)
+      send('Writing structured notes with AI…')
+      // Re-read the meeting: the jottings may have been saved during the
+      // recording, after the snapshot this handler opened with.
+      const current = getMeeting(id)
+      const notesMarkdown = await generateMeetingNotes(
+        transcript,
+        current?.templateId,
+        current?.userNotes
+      )
       updateMeeting(id, { notesMarkdown, status: 'ready' })
 
       return getMeeting(id)
@@ -144,12 +156,16 @@ function registerIpcHandlers(): void {
   ipcMain.handle('meetings:regenerateNotes', async (_e, id: string, templateId?: string) => {
     const meeting = getMeeting(id)
     if (!meeting || !meeting.transcript) {
-      throw new Error('Transcrição não disponível para esta reunião.')
+      throw new Error('No transcript available for this meeting.')
     }
     const nextTemplateId = templateId ?? meeting.templateId
     updateMeeting(id, { status: 'generating_notes', templateId: nextTemplateId })
     try {
-      const notesMarkdown = await generateMeetingNotes(meeting.transcript, nextTemplateId)
+      const notesMarkdown = await generateMeetingNotes(
+        meeting.transcript,
+        nextTemplateId,
+        meeting.userNotes
+      )
       updateMeeting(id, { notesMarkdown, status: 'ready' })
       return getMeeting(id)
     } catch (err) {
@@ -161,8 +177,15 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('meetings:noteTraceability', (_e, id: string) => {
     const meeting = getMeeting(id)
-    if (!meeting?.notesMarkdown || !meeting.transcript) return { total: 0, untraceable: [] }
-    return getNoteTraceability(meeting.notesMarkdown, meeting.transcript, meeting.templateId)
+    if (!meeting?.notesMarkdown || !meeting.transcript) {
+      return { total: 0, untraceable: [], fromUserNotes: [] }
+    }
+    return getNoteTraceability(
+      meeting.notesMarkdown,
+      meeting.transcript,
+      meeting.templateId,
+      meeting.userNotes
+    )
   })
 
   ipcMain.handle('templates:list', () => NOTE_TEMPLATES)

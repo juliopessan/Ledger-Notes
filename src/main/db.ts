@@ -13,9 +13,9 @@ if (!existsSync(audioDir)) mkdirSync(audioDir, { recursive: true })
 
 const dbFile = join(dataDir, 'meetings.json')
 
-// Armazenamento simples em arquivo JSON (evita dependências nativas compiladas).
-// Volume esperado é de dezenas/centenas de reuniões — reescrever o arquivo
-// inteiro a cada gravação é aceitável nessa escala.
+// Plain JSON file storage, which avoids compiled native dependencies. The
+// expected volume is tens or hundreds of meetings — rewriting the whole file
+// on each save is acceptable at that scale.
 
 function readAll(): Record<string, Meeting> {
   if (!existsSync(dbFile)) return {}

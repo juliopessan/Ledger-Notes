@@ -3,11 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import type { Meeting } from '../types'
 
 const statusLabel: Record<Meeting['status'], string> = {
-  recording: 'gravando',
-  transcribing: 'transcrevendo',
-  generating_notes: 'gerando notas',
-  ready: 'pronta',
-  error: 'erro'
+  recording: 'recording',
+  transcribing: 'transcribing',
+  generating_notes: 'writing notes',
+  ready: 'ready',
+  error: 'error'
 }
 
 export default function Sidebar({ refreshKey }: { refreshKey: number }): JSX.Element {
@@ -23,17 +23,17 @@ export default function Sidebar({ refreshKey }: { refreshKey: number }): JSX.Ele
       <div className="sidebar-header">
         <div className="brand">
           Ledger Notes
-          <small>The AI notepad for back-to-back meetings</small>
+          <small>Meeting notes that show their work</small>
         </div>
         <button className="btn btn-record" onClick={() => navigate('/record')}>
-          ● Nova gravação
+          ● New recording
         </button>
       </div>
 
       <div className="meeting-list">
         {meetings.length === 0 && (
           <p style={{ padding: '10px', color: 'var(--ink-faint)', fontSize: '12.5px' }}>
-            Nenhuma reunião ainda.
+            No meetings yet.
           </p>
         )}
         {meetings.map((m) => (
@@ -45,7 +45,7 @@ export default function Sidebar({ refreshKey }: { refreshKey: number }): JSX.Ele
             <span className="title">{m.title}</span>
             <span className="meta">
               <span className={`status-dot ${m.status}`} />
-              {new Date(m.createdAt).toLocaleDateString('pt-BR')} · {statusLabel[m.status]}
+              {new Date(m.createdAt).toLocaleDateString('en-GB')} · {statusLabel[m.status]}
             </span>
           </NavLink>
         ))}
@@ -53,7 +53,7 @@ export default function Sidebar({ refreshKey }: { refreshKey: number }): JSX.Ele
 
       <div className="sidebar-footer">
         <NavLink to="/settings" className="btn btn-ghost" style={{ width: '100%' }}>
-          Configurações
+          Settings
         </NavLink>
       </div>
     </aside>

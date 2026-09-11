@@ -3,8 +3,8 @@ import { useCallback, useRef, useState } from 'react'
 interface UseRecorderResult {
   isRecording: boolean
   seconds: number
-  /** Nível RMS do sinal capturado, 0–1. Medição real do áudio que está
-   *  entrando — a UI usa isso para mostrar que há som de verdade chegando. */
+  /** RMS level of the captured signal, 0–1. A real measurement of the audio
+   *  coming in — the UI uses it to show that sound is actually arriving. */
   level: number
   start: (opts: { micDeviceId?: string; captureSystemAudio: boolean }) => Promise<void>
   stop: () => Promise<{ buffer: ArrayBuffer; durationSeconds: number } | null>
@@ -71,7 +71,7 @@ export function useRecorder(): UseRecorderResult {
               }
             }
           } catch (sysErr) {
-            console.warn('Não foi possível capturar áudio do sistema:', sysErr)
+            console.warn('Could not capture system audio:', sysErr)
           }
         }
 
@@ -84,8 +84,9 @@ export function useRecorder(): UseRecorderResult {
 
         const analyser = audioCtx.createAnalyser()
         analyser.fftSize = 1024
-        destination.stream.getAudioTracks().length > 0 &&
+        if (destination.stream.getAudioTracks().length > 0) {
           audioCtx.createMediaStreamSource(destination.stream).connect(analyser)
+        }
         const samples = new Float32Array(analyser.fftSize)
 
         const readLevel = (): void => {

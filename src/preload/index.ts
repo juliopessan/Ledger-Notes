@@ -13,6 +13,8 @@ const api = {
       ipcRenderer.invoke('meetings:rename', id, title),
     updateNotes: (id: string, notesMarkdown: string): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:updateNotes', id, notesMarkdown),
+    updateUserNotes: (id: string, userNotes: string): Promise<Meeting> =>
+      ipcRenderer.invoke('meetings:updateUserNotes', id, userNotes),
     saveAudio: (id: string, buffer: ArrayBuffer, durationSeconds: number): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:saveAudio', id, buffer, durationSeconds),
     processRecording: (id: string): Promise<Meeting> =>

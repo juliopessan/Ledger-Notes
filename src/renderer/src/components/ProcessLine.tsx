@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react'
 
 export const TRANSCRIBING_VERBS = [
-  'Decodificando o áudio',
-  'Carregando o modelo Whisper',
-  'Transcrevendo a fala',
-  'Alinhando os segmentos'
+  'Decoding the audio',
+  'Loading the Whisper model',
+  'Transcribing speech',
+  'Aligning segments'
 ]
 
 export const NOTES_VERBS = [
-  'Lendo a transcrição',
-  'Separando decisões',
-  'Separando ações',
-  'Checando rastreabilidade'
+  'Reading the transcript',
+  'Separating decisions',
+  'Separating actions',
+  'Checking traceability'
 ]
 
 interface ProcessLineProps {
   verbs: string[]
-  /** Mensagem real emitida pelo processo principal. Quando existe, ela manda:
-   *  é o que está de fato acontecendo, e não a rotação decorativa. */
+  /** The real message emitted by the main process. When there is one it wins:
+   *  it is what is actually happening, rather than the decorative rotation. */
   message?: string | null
   startedAt?: number
 }

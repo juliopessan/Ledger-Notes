@@ -1,10 +1,11 @@
 /**
- * Templates de notas por tipo de reunião.
+ * Note templates, one per meeting type.
  *
- * Cada seção declara se seus itens são *rastreáveis* — ou seja, se afirmam algo
- * que alguém disse e portanto precisa bater com a transcrição. Isso é o que
- * mantém a checagem do Ledger funcionando quando o template muda a estrutura:
- * a verificação segue as seções marcadas, não títulos fixos no código.
+ * Each section declares whether its items are *traced* — that is, whether they
+ * assert something somebody said and therefore have to match the transcript.
+ * This is what keeps the Ledger check working when a template changes the
+ * structure: verification follows the sections marked here, not headings
+ * hardcoded somewhere else.
  */
 
 export type SectionFormat = 'prose' | 'bullets' | 'checkboxes'
@@ -13,7 +14,7 @@ export interface TemplateSection {
   heading: string
   instruction: string
   format: SectionFormat
-  /** Itens desta seção são conferidos contra a transcrição. */
+  /** Items in this section get checked against the transcript. */
   traced: boolean
 }
 
@@ -24,36 +25,36 @@ export interface NoteTemplate {
   sections: TemplateSection[]
 }
 
-/** Texto que o modelo escreve quando uma seção não tem nada a registrar. */
-export const EMPTY_MARKER = 'Nada explícito registrado'
+/** What the model writes when a section has nothing to record. */
+export const EMPTY_MARKER = 'Nothing explicitly recorded'
 
 export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: 'general',
-    name: 'Reunião geral',
-    description: 'Estrutura padrão: resumo, pontos discutidos, decisões e ações.',
+    name: 'General meeting',
+    description: 'The default shape: summary, topics discussed, decisions and actions.',
     sections: [
       {
-        heading: 'Resumo',
-        instruction: '2 a 4 frases objetivas sobre o que foi discutido.',
+        heading: 'Summary',
+        instruction: '2 to 4 plain sentences on what was discussed.',
         format: 'prose',
         traced: false
       },
       {
-        heading: 'Pontos principais',
-        instruction: 'Os tópicos efetivamente discutidos.',
+        heading: 'Key points',
+        instruction: 'The topics that were actually discussed.',
         format: 'bullets',
         traced: false
       },
       {
-        heading: 'Decisões',
-        instruction: 'Apenas decisões tomadas explicitamente na conversa.',
+        heading: 'Decisions',
+        instruction: 'Only decisions explicitly reached in the conversation.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Ações',
-        instruction: 'Itens de ação, com responsável quando mencionado.',
+        heading: 'Actions',
+        instruction: 'Action items, with the owner when one was named.',
         format: 'checkboxes',
         traced: true
       }
@@ -62,35 +63,35 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: 'one-on-one',
     name: '1:1',
-    description: 'Conversa individual: temas, feedback trocado e combinados.',
+    description: 'A one-to-one: themes raised, feedback exchanged, what was agreed.',
     sections: [
       {
-        heading: 'Contexto',
-        instruction: 'Em 2 a 3 frases, o clima e o assunto central da conversa.',
+        heading: 'Context',
+        instruction: 'In 2 to 3 sentences, the tone and the central subject.',
         format: 'prose',
         traced: false
       },
       {
-        heading: 'Temas discutidos',
-        instruction: 'Assuntos trazidos por qualquer um dos lados.',
+        heading: 'Themes discussed',
+        instruction: 'Subjects raised by either side.',
         format: 'bullets',
         traced: false
       },
       {
-        heading: 'Feedback trocado',
-        instruction: 'Feedback dado ou recebido, atribuindo a quem falou.',
+        heading: 'Feedback exchanged',
+        instruction: 'Feedback given or received, attributed to whoever said it.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Combinados',
-        instruction: 'O que ficou acordado, com responsável e prazo se ditos.',
+        heading: 'Agreed',
+        instruction: 'What was settled, with owner and deadline if stated.',
         format: 'checkboxes',
         traced: true
       },
       {
-        heading: 'Para a próxima',
-        instruction: 'Assuntos explicitamente deixados para a próxima conversa.',
+        heading: 'For next time',
+        instruction: 'Subjects explicitly deferred to the next conversation.',
         format: 'bullets',
         traced: false
       }
@@ -99,23 +100,23 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   {
     id: 'standup',
     name: 'Daily / Standup',
-    description: 'Progresso, impedimentos e próximos passos por pessoa.',
+    description: 'Progress, blockers and next steps, per person.',
     sections: [
       {
-        heading: 'Progresso',
-        instruction: 'O que cada pessoa relatou ter feito, agrupado por pessoa.',
+        heading: 'Progress',
+        instruction: 'What each person reported doing, grouped by person.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Impedimentos',
-        instruction: 'Bloqueios levantados, com quem está bloqueado e por quê.',
+        heading: 'Blockers',
+        instruction: 'Blockers raised, naming who is blocked and why.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Próximos passos',
-        instruction: 'O que cada pessoa disse que vai fazer em seguida.',
+        heading: 'Next steps',
+        instruction: 'What each person said they would do next.',
         format: 'checkboxes',
         traced: true
       }
@@ -123,36 +124,36 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   },
   {
     id: 'client',
-    name: 'Reunião com cliente',
-    description: 'Necessidades, objeções e compromissos assumidos.',
+    name: 'Client call',
+    description: 'Needs raised, objections, and what was committed to.',
     sections: [
       {
-        heading: 'Contexto do cliente',
-        instruction: 'Situação e cenário do cliente conforme relatado por ele.',
+        heading: 'Client context',
+        instruction: "The client's situation as they described it.",
         format: 'prose',
         traced: false
       },
       {
-        heading: 'Necessidades levantadas',
-        instruction: 'Dores, pedidos e requisitos que o cliente verbalizou.',
+        heading: 'Needs raised',
+        instruction: 'Pains, requests and requirements the client put into words.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Objeções e preocupações',
-        instruction: 'Ressalvas levantadas pelo cliente, incluindo preço e prazo.',
+        heading: 'Objections and concerns',
+        instruction: 'Reservations the client raised, price and timing included.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Compromissos assumidos',
-        instruction: 'O que foi prometido ao cliente, e por quem.',
+        heading: 'Commitments made',
+        instruction: 'What was promised to the client, and by whom.',
         format: 'checkboxes',
         traced: true
       },
       {
-        heading: 'Próximos passos',
-        instruction: 'Encaminhamentos acordados, com datas quando ditas.',
+        heading: 'Next steps',
+        instruction: 'Agreed follow-ups, with dates when they were stated.',
         format: 'checkboxes',
         traced: true
       }
@@ -160,38 +161,38 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   },
   {
     id: 'interview',
-    name: 'Entrevista',
-    description: 'Respostas por tema, sinais e pontos de atenção.',
+    name: 'Interview',
+    description: 'Answers by theme, positive signals and open questions.',
     sections: [
       {
-        heading: 'Perfil',
-        instruction: 'Resumo da trajetória que a pessoa descreveu sobre si.',
+        heading: 'Profile',
+        instruction: 'A summary of the background the candidate described.',
         format: 'prose',
         traced: false
       },
       {
-        heading: 'Respostas por tema',
-        instruction: 'Agrupe as respostas pelos temas que foram perguntados.',
+        heading: 'Answers by theme',
+        instruction: 'Group the answers under the themes that were asked about.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Sinais positivos',
-        instruction: 'Evidências concretas que a pessoa deu, citando o exemplo.',
+        heading: 'Positive signals',
+        instruction: 'Concrete evidence the candidate gave, citing the example.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Pontos de atenção',
-        instruction: 'Lacunas ou respostas vagas — descreva o que ficou em aberto.',
+        heading: 'Open questions',
+        instruction: 'Gaps or vague answers — describe what was left unresolved.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Recomendação',
+        heading: 'Recommendation',
         instruction:
-          'Sua leitura da entrevista em 1 a 2 frases. Esta seção é interpretação, ' +
-          'não relato — deixe isso claro no texto.',
+          'Your read on the interview in 1 to 2 sentences. This section is ' +
+          'interpretation, not reporting — make that explicit in the text.',
         format: 'prose',
         traced: false
       }
@@ -199,30 +200,30 @@ export const NOTE_TEMPLATES: NoteTemplate[] = [
   },
   {
     id: 'planning',
-    name: 'Planejamento / Kickoff',
-    description: 'Objetivo, escopo acordado, riscos e responsáveis.',
+    name: 'Planning / Kickoff',
+    description: 'Objective, agreed scope, risks and owners.',
     sections: [
       {
-        heading: 'Objetivo',
-        instruction: 'O objetivo do trabalho conforme enunciado na reunião.',
+        heading: 'Objective',
+        instruction: 'The objective of the work as stated in the meeting.',
         format: 'prose',
         traced: false
       },
       {
-        heading: 'Escopo acordado',
-        instruction: 'O que entra no escopo, e o que foi explicitamente cortado.',
+        heading: 'Agreed scope',
+        instruction: 'What is in scope, and what was explicitly cut.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Riscos levantados',
-        instruction: 'Riscos e dependências citados, com quem os levantou.',
+        heading: 'Risks raised',
+        instruction: 'Risks and dependencies mentioned, and who raised them.',
         format: 'bullets',
         traced: true
       },
       {
-        heading: 'Responsáveis e prazos',
-        instruction: 'Quem ficou com o quê, e para quando.',
+        heading: 'Owners and deadlines',
+        instruction: 'Who took what, and by when.',
         format: 'checkboxes',
         traced: true
       }
@@ -239,32 +240,33 @@ export function getTemplate(id: string | null | undefined): NoteTemplate {
 function formatHint(format: SectionFormat): string {
   switch (format) {
     case 'prose':
-      return 'texto corrido, sem lista'
+      return 'running prose, no list'
     case 'checkboxes':
-      return 'lista no formato "- [ ] item — responsável (se mencionado)"'
+      return 'a list of "- [ ] item — owner (if named)"'
     case 'bullets':
-      return 'lista com "- item"'
+      return 'a list of "- item"'
   }
 }
 
-/** Monta o system prompt a partir da estrutura declarada no template. */
+/** Builds the system prompt from the structure the template declares. */
 export function buildSystemPrompt(template: NoteTemplate): string {
   const sectionSpec = template.sections
-    .map((s) => `  ## ${s.heading}\n  (${s.instruction} Formato: ${formatHint(s.format)}.)`)
+    .map((s) => `  ## ${s.heading}\n  (${s.instruction} Format: ${formatHint(s.format)}.)`)
     .join('\n')
 
-  return `Você transforma transcrições brutas de reuniões em notas estruturadas e objetivas, em português do Brasil. O tipo de reunião é: ${template.name} — ${template.description}
+  return `You turn raw meeting transcripts into structured, plain notes. The meeting type is: ${template.name} — ${template.description}
 
-Regras estritas:
-- Use APENAS informações que aparecem explicitamente na transcrição. Nunca invente nomes, números, datas, decisões ou compromissos que não foram ditos.
-- Se um trecho estiver confuso ou incompleto, não tente adivinhar o que foi dito.
-- Se uma seção não tiver nada a registrar, escreva exatamente "${EMPTY_MARKER}" nela.
-- Estruture a saída em Markdown exatamente com estas seções, nesta ordem:
+Strict rules:
+- Use ONLY information that appears explicitly in the transcript. Never invent names, numbers, dates, decisions or commitments that were not said.
+- If a passage is unclear or incomplete, do not guess at what was said.
+- If a section has nothing to record, write exactly "${EMPTY_MARKER}" in it.
+- Write the body of the notes in the same language as the transcript. Keep the section headings exactly as given below, in English, whatever that language is.
+- Structure the output as Markdown with exactly these sections, in this order:
 ${sectionSpec}
-- Seja conciso. Não escreva nada fora dessas seções.`
+- Be concise. Write nothing outside those sections.`
 }
 
-/** Títulos das seções cujos itens devem ser conferidos contra a transcrição. */
+/** Headings whose items must be checked against the transcript. */
 export function tracedHeadings(template: NoteTemplate): string[] {
   return template.sections.filter((s) => s.traced).map((s) => s.heading)
 }

@@ -22,20 +22,20 @@ function convertToWav(inputPath: string, outputPath: string): Promise<void> {
     proc.on('error', reject)
     proc.on('close', (code) => {
       if (code === 0) resolve()
-      else reject(new Error(`ffmpeg falhou (código ${code}): ${stderr.slice(-2000)}`))
+      else reject(new Error(`ffmpeg failed (code ${code}): ${stderr.slice(-2000)}`))
     })
   })
 }
 
-/** Raiz do sidecar: dentro do bundle quando empacotado, na pasta do projeto em dev. */
+/** Sidecar root: inside the bundle when packaged, in the project folder in dev. */
 function pythonRoot(): string {
   return app.isPackaged ? join(process.resourcesPath, 'python') : join(app.getAppPath(), 'python')
 }
 
 /**
- * Resolve o interpretador Python, em ordem: caminho configurado pelo usuário,
- * venv ao lado do script, e por último um python3 do sistema (que precisa ter
- * faster-whisper instalado).
+ * Resolves the Python interpreter, in order: the path the user configured, a
+ * venv next to the script, and finally a system python3 (which still needs
+ * faster-whisper installed).
  */
 function resolvePythonBin(): string | null {
   const bin = process.platform === 'win32' ? 'python.exe' : 'python3'
@@ -60,8 +60,8 @@ function runWhisperSidecar(wavPath: string, modelName: string, language: string)
     if (!pythonBin) {
       reject(
         new Error(
-          'Nenhum interpretador Python encontrado. Instale o Python 3 e rode o setup do Whisper ' +
-            '(veja o README), ou aponte o caminho do Python em Configurações.'
+          'No Python interpreter found. Install Python 3 and run the Whisper setup ' +
+            '(see the README), or point at your Python in Settings.'
         )
       )
       return
@@ -77,14 +77,14 @@ function runWhisperSidecar(wavPath: string, modelName: string, language: string)
     proc.on('error', reject)
     proc.on('close', (code) => {
       if (code !== 0) {
-        reject(new Error(`Whisper falhou (código ${code}): ${stderr.trim().slice(-2000)}`))
+        reject(new Error(`Whisper failed (code ${code}): ${stderr.trim().slice(-2000)}`))
         return
       }
       try {
         const parsed = JSON.parse(stdout.trim().split('\n').pop() ?? '{}') as { text?: string }
         resolve(parsed.text ?? '')
-      } catch (err) {
-        reject(new Error(`Não foi possível interpretar a saída do Whisper: ${stdout.slice(-500)}`))
+      } catch {
+        reject(new Error(`Could not parse Whisper's output: ${stdout.slice(-500)}`))
       }
     })
   })
@@ -96,13 +96,13 @@ export async function transcribeAudio(
 ): Promise<string> {
   const wavPath = audioPath.replace(/\.[^.]+$/, '.wav')
 
-  onProgress?.('Convertendo áudio para WAV 16kHz...')
+  onProgress?.('Converting audio to 16kHz WAV…')
   await convertToWav(audioPath, wavPath)
 
   const modelName = settingsStore.get('whisperModel') || 'small'
   const language = settingsStore.get('whisperLanguage') || 'auto'
 
-  onProgress?.(`Transcrevendo com Whisper (${modelName}) via faster-whisper local...`)
+  onProgress?.(`Transcribing with Whisper (${modelName}) via local faster-whisper…`)
   const transcript = await runWhisperSidecar(wavPath, modelName, language)
 
   await unlink(wavPath).catch(() => {})

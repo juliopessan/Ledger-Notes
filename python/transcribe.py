@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Transcreve um arquivo de áudio localmente com faster-whisper.
+"""Transcribe an audio file locally with faster-whisper.
 
-Uso: python transcribe.py <audio_path> <model_size> [language]
+Usage: python transcribe.py <audio_path> <model_size> [language]
 
-Imprime APENAS um JSON de uma linha em stdout: {"text": "..."}
-Qualquer log/erro vai para stderr, para não contaminar o stdout que o
-processo Electron (main/transcription.ts) precisa parsear.
+Prints ONLY a single-line JSON object to stdout: {"text": "..."}
+Every log and error goes to stderr, so nothing contaminates the stdout the
+Electron process (main/transcription.ts) has to parse.
 """
 import json
 import sys
@@ -13,7 +13,7 @@ import sys
 
 def main() -> None:
     if len(sys.argv) < 3:
-        print("uso: transcribe.py <audio_path> <model_size> [language]", file=sys.stderr)
+        print("usage: transcribe.py <audio_path> <model_size> [language]", file=sys.stderr)
         sys.exit(2)
 
     audio_path = sys.argv[1]
@@ -24,7 +24,7 @@ def main() -> None:
         from faster_whisper import WhisperModel
     except ImportError:
         print(
-            "faster-whisper não está instalado. Rode: cd python && "
+            "faster-whisper is not installed. Run: cd python && "
             "python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt",
             file=sys.stderr,
         )
@@ -35,7 +35,7 @@ def main() -> None:
         segments, _info = model.transcribe(audio_path, language=language, beam_size=5)
         text = " ".join(seg.text.strip() for seg in segments).strip()
     except Exception as exc:  # noqa: BLE001
-        print(f"Falha ao transcrever com Whisper: {exc}", file=sys.stderr)
+        print(f"Whisper failed to transcribe: {exc}", file=sys.stderr)
         sys.exit(1)
 
     print(json.dumps({"text": text}))

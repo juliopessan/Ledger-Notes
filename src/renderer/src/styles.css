@@ -13,9 +13,9 @@
   --clay-deep: #c8481c;
   --mint: #4f9c6b;
 
-  /* Acento de gravação. Aponta para clay por decisão de produto: o laranja
-     do Ledger é a cor da marca aqui, não só o sinal de "não verificado".
-     Trocar esta linha por um tom próprio volta a separar os dois papéis. */
+  /* Recording accent. Points at clay by product decision: the Ledger orange
+     is the brand colour here, not only the "unverified" signal. Swapping this
+     one line for a tone of its own separates the two roles again. */
   --rec: var(--clay);
 
   --ledger-bg: #14140f;
@@ -315,8 +315,9 @@ h1.page-title {
   align-items: center;
   gap: 9px;
 }
-/* O ponto só fica mint quando há de fato algo verificado. Enquanto processa
-   fica neutro, e em erro vira clay — mint nunca aparece sem lastro. */
+/* The dot only goes mint when something has actually been verified. While
+   processing it stays neutral, and on error it turns clay — mint never shows
+   up without backing. */
 .ledger-head .live::before {
   content: '';
   width: 6px;
@@ -338,9 +339,9 @@ h1.page-title {
   color: var(--ledger-dim);
 }
 
-/* Barras pareadas — o dispositivo central do Ledger. A distância entre a
-   barra clay (gerado) e a mint (rastreado) é o argumento do componente:
-   o leitor vê o déficit antes de ler qualquer palavra. */
+/* Paired bars — the Ledger's central device. The distance between the clay
+   bar (generated) and the mint one (traced) is the component's argument: the
+   reader sees the shortfall before reading a word. */
 .bar-row {
   display: flex;
   flex-direction: column;
@@ -512,6 +513,20 @@ h1.page-title {
   outline: 1px solid var(--ink-faint);
 }
 
+.jottings-box {
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--ink);
+  padding: 22px 24px;
+  font-family: var(--display);
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink);
+  white-space: pre-wrap;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
 .transcript-box {
   background: var(--paper-deep);
   border: 1px solid var(--rule);
@@ -552,6 +567,79 @@ h1.page-title {
   border-radius: 50%;
   background: var(--rec);
   animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ---------- Recording in progress ---------- */
+
+.recording-view {
+  max-width: 780px;
+  margin: 0 auto;
+  height: calc(100vh - 46px);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 28px;
+}
+
+.recording-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 0 18px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 22px;
+}
+
+.recording-clock {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.recording-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jot-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.jot-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.jot-editor {
+  flex: 1;
+  width: 100%;
+  background: var(--paper-deep);
+  border: 1px solid var(--rule);
+  padding: 24px 26px;
+  font-family: var(--display);
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ink);
+  resize: none;
+}
+.jot-editor:focus {
+  outline: 1px solid var(--ink-faint);
+}
+.jot-editor::placeholder {
+  color: var(--ink-faint);
+  line-height: 1.7;
 }
 
 .level-meter {
@@ -621,11 +709,11 @@ h1.page-title {
   margin-top: 10px;
 }
 
-/* ---------- Movimento ----------
-   Contido por princípio: o sistema é sobre credibilidade, e animação demais
-   lê como enfeite. Só três coisas se movem — o que está sendo processado,
-   o que acabou de ser medido, e a entrada da view. Números NUNCA animam
-   (contador subindo denuncia que ninguém conferiu o valor). */
+/* ---------- Motion ----------
+   Restrained on principle: the system is about credibility, and too much
+   animation reads as decoration. Only three things move — what is being
+   processed, what was just measured, and the view entering. Figures NEVER
+   animate (a counter ticking up says nobody checked the value). */
 
 .process-line {
   display: flex;
@@ -683,7 +771,7 @@ h1.page-title {
   }
 }
 
-/* Hairline varrendo o ledger enquanto há trabalho em andamento. */
+/* Hairline sweeping the ledger while work is in progress. */
 .ledger.is-working {
   position: relative;
   overflow: hidden;
@@ -706,7 +794,7 @@ h1.page-title {
   }
 }
 
-/* Entrada da view: sobe 8px com stagger curto. */
+/* View entrance: rises 8px on a short stagger. */
 @keyframes rise {
   from {
     opacity: 0;

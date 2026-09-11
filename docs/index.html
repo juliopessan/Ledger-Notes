@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ledger Notes — The AI notepad for back-to-back meetings</title>
+<title>Ledger Notes — Meeting notes that show their work</title>
 <meta name="description" content="Local-first AI meeting notes. Transcribes on your machine with Whisper, and shows you which notes trace back to what was actually said." />
 <link rel="icon" type="image/png" href="favicon.png" />
-<meta property="og:title" content="Ledger Notes — The AI notepad for back-to-back meetings" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta property="og:title" content="Ledger Notes — Meeting notes that show their work" />
 <meta property="og:description" content="Local-first AI meeting notes that separate what was measured from what was asserted." />
 <meta property="og:image" content="screenshot.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 <script>
-  // Só assume o estado escondido se houver como revelá-lo de volta.
+  // Only take on the hidden state if there is a way to reveal it again.
   if ('IntersectionObserver' in window) document.documentElement.className += ' js-anim';
 </script>
 <style>
@@ -453,6 +454,15 @@
     color: var(--ink-soft);
   }
 
+  .jot-sample {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--ink);
+    white-space: pre-wrap;
+    border-left: 2px solid var(--ink);
+    padding-left: 16px;
+  }
+
   /* ---------- Download ---------- */
 
   .download {
@@ -513,9 +523,9 @@
 
   /* ---------- Motion ---------- */
 
-  /* Conteúdo é visível por padrão. O estado escondido só entra quando o script
-     confirma que consegue revelá-lo de volta — senão um JS quebrado deixaria a
-     página inteira em branco. */
+  /* Content is visible by default. The hidden state only kicks in once the
+     script confirms it can reveal it again — otherwise broken JS would leave
+     the whole page blank. */
   .bar-fill { transform: scaleX(1); }
 
   html.js-anim .reveal {
@@ -548,6 +558,7 @@
     </a>
     <div class="nav-links">
       <a class="hide-sm" href="#demo">Notes</a>
+      <a class="hide-sm" href="#jotting">Jotting</a>
       <a class="hide-sm" href="#templates">Templates</a>
       <a class="hide-sm" href="#how">How it works</a>
       <a class="hide-sm" href="#privacy">Privacy</a>
@@ -587,36 +598,66 @@
       <p class="eyebrow reveal">What it produces</p>
       <h2 class="reveal">Raw transcript in. <span class="voice">Receipts out.</span></h2>
       <p class="lede reveal">
-        You don't type anything during the call. The transcript goes in, structured notes come out —
-        and every decision and action carries a mark saying whether it was actually found in what
-        was said.
+        Jot whatever you want during the call, or nothing at all. The transcript fills in around
+        what you marked, and every decision and action carries a mark saying where it came from —
+        the recording, your own notes, or neither.
       </p>
 
       <div class="demo-grid reveal">
         <div class="demo-panel">
           <span class="demo-k">Transcript · measured</span>
           <div class="demo-transcript">
-            "…a gente precisa decidir se mantém a data de outubro ou se empurra para novembro. O
-            time de backend ainda tem duas integrações pendentes, e o módulo de relatórios não vai
-            ficar pronto a tempo. Então ficou decidido o seguinte: manter a data de outubro e cortar
-            o módulo de relatórios do escopo. A Marina vai falar com o time de design ainda essa
-            semana…"
+            "…we need to decide whether we hold the October date or push to November. The backend
+            team still has two integrations outstanding, and the reporting module won't be ready in
+            time. So here's what was decided: hold October and cut the reporting module from scope.
+            Marina will talk to the design team this week…"
           </div>
         </div>
 
         <div class="demo-panel">
           <span class="demo-k">Generated notes · checked</span>
           <div class="demo-notes">
-            <h4>Decisões</h4>
-            <p class="note-item ok">Manter a data de outubro e cortar o módulo de relatórios do escopo</p>
-            <p class="note-item bad">Contratar dois engenheiros de backend no próximo trimestre</p>
-            <h4>Ações</h4>
-            <p class="note-item ok">Marina fala com o time de design ainda essa semana</p>
+            <h4>Decisions</h4>
+            <p class="note-item ok">Hold the October date and cut the reporting module from scope</p>
+            <p class="note-item bad">Hire two backend engineers next quarter</p>
+            <h4>Actions</h4>
+            <p class="note-item ok">Marina talks to the design team this week</p>
           </div>
           <p class="demo-legend">
             <span class="swatch mint"></span>found in the transcript
             <span class="swatch clay" style="margin-left:18px"></span>not found — flagged for review
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="jotting">
+    <div class="wrap">
+      <p class="eyebrow reveal">During the call</p>
+      <div class="split">
+        <div class="reveal">
+          <h2>Write three words. <span class="voice">Get the paragraph.</span></h2>
+          <p>
+            Type sparse notes while the meeting runs — a name, a number, a thing you can't let
+            slip. Each line becomes an anchor: the transcript fills in the detail around it, and
+            what you flagged as mattering stays at the top of its section.
+          </p>
+          <p>
+            Your raw jottings are kept exactly as you typed them, in their own tab. The model
+            expands on them; it never overwrites them. And an item that came from your notes rather
+            than from the recording is labelled as such — your assertion is not the same kind of
+            claim as a quote, and the ledger doesn't pretend otherwise.
+          </p>
+        </div>
+        <div class="reveal">
+          <div class="demo-panel">
+            <span class="demo-k">What you typed · 14:32</span>
+            <div class="jot-sample">hire 2 backend engineers Q1
+check budget w/ Ana
+
+- october looks risky</div>
+          </div>
         </div>
       </div>
     </div>
@@ -641,12 +682,12 @@
         </div>
         <div class="reveal">
           <div class="chips">
-            <span class="chip">Reunião geral</span>
+            <span class="chip">General meeting</span>
             <span class="chip">1:1</span>
             <span class="chip">Daily / Standup</span>
-            <span class="chip">Reunião com cliente</span>
-            <span class="chip">Entrevista</span>
-            <span class="chip">Planejamento / Kickoff</span>
+            <span class="chip">Client call</span>
+            <span class="chip">Interview</span>
+            <span class="chip">Planning / Kickoff</span>
           </div>
         </div>
       </div>
@@ -734,10 +775,10 @@
       <div class="grid-3">
         <div class="item reveal">
           <span class="num">01 / RECORD</span>
-          <h3>Mic and system audio</h3>
+          <h3>Mic, system audio, your notes</h3>
           <p>
-            Captures both sides of the call, not just your voice — so the other participants are in
-            the transcript too.
+            Captures both sides of the call, not just your voice — and gives you a page to jot on
+            while it runs.
           </p>
         </div>
         <div class="item reveal">
@@ -928,11 +969,11 @@
       targets.forEach(function (el) { el.classList.add('in'); });
     };
 
-    // Tudo que já está na viewport (ou acima dela) aparece de imediato, sem
-    // depender do observer: um renderizador que captura a página no load — ou
-    // um leitor que nunca rola — precisa ver conteúdo, não uma tela vazia.
-    // Roda de novo no 'load' porque um link com âncora pula a página depois
-    // desta primeira medição.
+    // Anything already in (or above) the viewport shows immediately, without
+    // waiting on the observer: a renderer that captures at load — or a reader
+    // who never scrolls — has to see content, not an empty screen. It runs
+    // again on 'load' because an anchor link jumps the page after this first
+    // measurement.
     var revealVisible = function () {
       targets.forEach(function (el) {
         if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('in');
@@ -941,7 +982,7 @@
     revealVisible();
     window.addEventListener('load', revealVisible);
 
-    // Rede de segurança para o resto.
+    // Safety net for the rest.
     setTimeout(revealAll, 2500);
 
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

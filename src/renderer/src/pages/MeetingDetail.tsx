@@ -11,20 +11,24 @@ function formatDuration(totalSeconds: number): string {
 }
 
 const statusMessage: Record<Meeting['status'], string> = {
-  recording: 'Gravando...',
-  transcribing: 'Transcrevendo áudio localmente com Whisper...',
-  generating_notes: 'Gerando notas estruturadas com IA...',
-  ready: 'Pronta',
-  error: 'Erro no processamento'
+  recording: 'Recording…',
+  transcribing: 'Transcribing audio locally with Whisper…',
+  generating_notes: 'Writing structured notes with AI…',
+  ready: 'Ready',
+  error: 'Processing failed'
 }
 
 export default function MeetingDetail({ onChanged }: { onChanged: () => void }): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [meeting, setMeeting] = useState<Meeting | null>(null)
-  const [tab, setTab] = useState<'notes' | 'transcript'>('notes')
+  const [tab, setTab] = useState<'notes' | 'transcript' | 'jottings'>('notes')
   const [notesDraft, setNotesDraft] = useState('')
-  const [traceability, setTraceability] = useState<NoteTraceability>({ total: 0, untraceable: [] })
+  const [traceability, setTraceability] = useState<NoteTraceability>({
+    total: 0,
+    untraceable: [],
+    fromUserNotes: []
+  })
   const [progressMsg, setProgressMsg] = useState<string | null>(null)
   const [processingSince, setProcessingSince] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -81,7 +85,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
 
   const handleRegenerate = async (): Promise<void> => {
     if (!id) return
-    setProgressMsg('Regenerando notas...')
+    setProgressMsg('Regenerating notes…')
     const m = await window.api.meetings.regenerateNotes(id, templateId)
     setMeeting(m)
     setNotesDraft(m.notesMarkdown ?? '')
@@ -93,7 +97,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
 
   const handleDelete = async (): Promise<void> => {
     if (!id) return
-    if (!confirm('Excluir esta reunião e todos os dados associados?')) return
+    if (!confirm('Delete this meeting and everything stored with it?')) return
     await window.api.meetings.delete(id)
     onChanged()
     navigate('/')
@@ -105,8 +109,8 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
     ? meeting.transcript.trim().split(/\s+/).filter(Boolean).length
     : 0
   const isProcessing = meeting.status === 'transcribing' || meeting.status === 'generating_notes'
-  const { total: totalClaims, untraceable } = traceability
-  const tracedCount = totalClaims - untraceable.length
+  const { total: totalClaims, untraceable, fromUserNotes } = traceability
+  const tracedCount = totalClaims - untraceable.length - fromUserNotes.length
   const tracedPct = totalClaims > 0 ? Math.round((tracedCount / totalClaims) * 100) : 0
   const liveStateClass = isProcessing
     ? 'is-working'
@@ -118,24 +122,24 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
 
   return (
     <div className="main-inner">
-      <p className="eyebrow">Reunião</p>
+      <p className="eyebrow">Meeting</p>
       <h1 className="page-title">{meeting.title}</h1>
       <p className="subtitle">
-        {new Date(meeting.createdAt).toLocaleString('pt-BR')} —{' '}
-        <span className="voice">o que ficou registrado, não o que deveria ter sido dito.</span>
+        {new Date(meeting.createdAt).toLocaleString('en-GB')} —{' '}
+        <span className="voice">what got recorded, not what should have been said.</span>
       </p>
 
       <div className={`ledger ${isProcessing ? 'is-working' : ''}`}>
         <div className="ledger-head">
           <span className={`live ${liveStateClass}`}>{statusMessage[meeting.status]}</span>
-          <span className="meta">whisper local · transcrição + notas por IA</span>
+          <span className="meta">local whisper · transcript + AI notes</span>
         </div>
 
         {meeting.status === 'ready' && totalClaims > 0 && (
           <>
             <div className="bar-row">
               <div className="bar-label">
-                <span>Decisões e ações geradas</span>
+                <span>Decisions &amp; actions generated</span>
                 <b>{totalClaims.toString().padStart(2, '0')}</b>
               </div>
               <div className="bar-track">
@@ -144,7 +148,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
             </div>
             <div className="bar-row">
               <div className="bar-label">
-                <span>Rastreadas à transcrição</span>
+                <span>Traced to the transcript</span>
                 <b>{tracedCount.toString().padStart(2, '0')}</b>
               </div>
               <div className="bar-track">
@@ -160,16 +164,22 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
         <div className="figs">
           <div className="fig">
             <b>{formatDuration(meeting.durationSeconds)}</b>
-            <span>duração gravada</span>
+            <span>recorded duration</span>
           </div>
           <div className="fig">
             <b>{wordCount.toString().padStart(2, '0')}</b>
-            <span>palavras transcritas</span>
+            <span>words transcribed</span>
           </div>
           <div className="fig">
             <b>{meeting.status === 'ready' ? '100%' : '—'}</b>
-            <span>processamento</span>
+            <span>processed</span>
           </div>
+          {fromUserNotes.length > 0 && (
+            <div className="fig">
+              <b>{fromUserNotes.length.toString().padStart(2, '0')}</b>
+              <span>from your own notes</span>
+            </div>
+          )}
         </div>
 
         {meeting.status === 'ready' && meeting.transcript && (
@@ -178,9 +188,9 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
               ✓
             </span>
             <p>
-              <span className="k">Medido, não estimado</span>
-              A transcrição acima foi gerada localmente pelo Whisper a partir do áudio gravado.
-              Reabra o áudio em {meeting.audioPath?.split('/').slice(-2).join('/')} para conferir.
+              <span className="k">Measured, not estimated</span>
+              The transcript above was produced locally by Whisper from the recorded audio.
+              Reopen the audio at {meeting.audioPath?.split('/').slice(-2).join('/')} to check it.
             </p>
           </div>
         )}
@@ -202,10 +212,11 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
 
       {untraceable.length > 0 && (
         <div className="flag">
-          <span className="flag-k">Não rastreável à transcrição</span>
+          <span className="flag-k">Not traceable</span>
           <p>
-            Os itens abaixo aparecem nas notas geradas, mas não foram encontrados com confiança na
-            transcrição. Trate-os como não confirmados até revisar o áudio original:
+            The items below appear in the generated notes but were not found with confidence in the
+            transcript or in your own jottings. Treat them as unconfirmed until you review the
+            original audio:
           </p>
           <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
             {untraceable.map((claim, i) => (
@@ -219,14 +230,22 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
 
       <div className="tabs">
         <button className={`tab ${tab === 'notes' ? 'active' : ''}`} onClick={() => setTab('notes')}>
-          Notas
+          Notes
         </button>
         <button
           className={`tab ${tab === 'transcript' ? 'active' : ''}`}
           onClick={() => setTab('transcript')}
         >
-          Transcrição
+          Transcript
         </button>
+        {meeting.userNotes && meeting.userNotes.trim().length > 0 && (
+          <button
+            className={`tab ${tab === 'jottings' ? 'active' : ''}`}
+            onClick={() => setTab('jottings')}
+          >
+            Your notes
+          </button>
+        )}
       </div>
 
       {tab === 'notes' ? (
@@ -235,18 +254,18 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
             className="notes-editor"
             value={notesDraft}
             onChange={(e) => setNotesDraft(e.target.value)}
-            placeholder={isProcessing ? 'Gerando notas...' : 'Notas aparecerão aqui.'}
+            placeholder={isProcessing ? 'Writing notes…' : 'Notes will appear here.'}
           />
           <div className="row" style={{ marginTop: '14px' }}>
             <button className="btn btn-primary" onClick={handleSaveNotes} disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar notas'}
+              {saving ? 'Saving…' : 'Save notes'}
             </button>
             <select
               className="template-select"
               value={templateId}
               onChange={(e) => setTemplateId(e.target.value)}
               disabled={isProcessing}
-              title="Tipo de reunião usado para estruturar as notas"
+              title="Meeting type used to structure the notes"
             >
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -259,17 +278,25 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
               onClick={handleRegenerate}
               disabled={!meeting.transcript || isProcessing}
             >
-              {templateId !== meeting.templateId ? 'Regerar com este template' : 'Regenerar notas'}
+              {templateId !== meeting.templateId ? 'Rewrite with this template' : 'Regenerate notes'}
             </button>
             <button className="btn btn-ghost" onClick={handleDelete} style={{ marginLeft: 'auto' }}>
-              Excluir reunião
+              Delete meeting
             </button>
           </div>
         </>
-      ) : (
+      ) : tab === 'transcript' ? (
         <div className="transcript-box">
-          {meeting.transcript || (isProcessing ? 'Transcrevendo...' : 'Sem transcrição ainda.')}
+          {meeting.transcript || (isProcessing ? 'Transcribing…' : 'No transcript yet.')}
         </div>
+      ) : (
+        <>
+          <div className="jottings-box">{meeting.userNotes}</div>
+          <p className="hint" style={{ marginTop: '12px' }}>
+            What you typed during the meeting, exactly as you wrote it. It anchored the generated
+            notes, and is never overwritten by them.
+          </p>
+        </>
       )}
     </div>
   )

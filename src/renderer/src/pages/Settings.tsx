@@ -26,17 +26,17 @@ export default function Settings(): JSX.Element {
 
   return (
     <div className="main-inner">
-      <p className="eyebrow">Configurações</p>
+      <p className="eyebrow">Settings</p>
       <h1 className="page-title">
-        Suas chaves, <span className="voice">sua escolha de provedor.</span>
+        Your keys, <span className="voice">your choice of provider.</span>
       </h1>
       <p className="subtitle">
-        A transcrição roda 100% local com Whisper. As notas estruturadas usam a IA que você
-        configurar abaixo — a chave fica só no seu computador.
+        Transcription runs fully locally with Whisper. The structured notes use whichever AI you
+        configure below — the key never leaves your computer.
       </p>
 
       <div className="field">
-        <label>Provedor de IA para notas</label>
+        <label>AI provider for notes</label>
         <select
           value={settings.aiProvider}
           onChange={(e) => update({ aiProvider: e.target.value as AppSettings['aiProvider'] })}
@@ -47,7 +47,7 @@ export default function Settings(): JSX.Element {
       </div>
 
       <div className="field">
-        <label>Chave de API — Anthropic</label>
+        <label>Anthropic API key</label>
         <input
           type="password"
           value={settings.anthropicApiKey}
@@ -58,7 +58,7 @@ export default function Settings(): JSX.Element {
       </div>
 
       <div className="field">
-        <label>Modelo Anthropic</label>
+        <label>Anthropic model</label>
         <input
           value={settings.anthropicModel}
           onChange={(e) => update({ anthropicModel: e.target.value })}
@@ -66,7 +66,7 @@ export default function Settings(): JSX.Element {
       </div>
 
       <div className="field">
-        <label>Chave de API — OpenAI</label>
+        <label>OpenAI API key</label>
         <input
           type="password"
           value={settings.openaiApiKey}
@@ -77,12 +77,12 @@ export default function Settings(): JSX.Element {
       </div>
 
       <div className="field">
-        <label>Modelo OpenAI</label>
+        <label>OpenAI model</label>
         <input value={settings.openaiModel} onChange={(e) => update({ openaiModel: e.target.value })} />
       </div>
 
       <div className="field">
-        <label>Template padrão das notas</label>
+        <label>Default note template</label>
         <select
           value={settings.defaultTemplateId}
           onChange={(e) => update({ defaultTemplateId: e.target.value })}
@@ -94,63 +94,63 @@ export default function Settings(): JSX.Element {
           ))}
         </select>
         <span className="hint">
-          Aplicado a novas gravações. Dá para trocar no momento de gravar, ou depois, regerando as
-          notas de uma reunião já transcrita.
+          Applied to new recordings. You can switch it when recording, or later, by regenerating
+          the notes of a meeting that is already transcribed.
         </span>
       </div>
 
       <div className="field">
-        <label>Modelo Whisper (transcrição local)</label>
+        <label>Whisper model (local transcription)</label>
         <select
           value={settings.whisperModel}
           onChange={(e) => update({ whisperModel: e.target.value as AppSettings['whisperModel'] })}
         >
-          <option value="tiny">tiny — mais rápido, menos preciso</option>
+          <option value="tiny">tiny — fastest, least accurate</option>
           <option value="base">base</option>
-          <option value="small">small — bom equilíbrio (recomendado)</option>
+          <option value="small">small — good balance (recommended)</option>
           <option value="medium">medium</option>
-          <option value="large-v3">large-v3 — mais preciso, mais lento</option>
+          <option value="large-v3">large-v3 — most accurate, slowest</option>
         </select>
         <span className="hint">
-          O modelo é baixado automaticamente na primeira transcrição (pode levar alguns minutos).
+          The model downloads automatically on the first transcription (this can take a few minutes).
         </span>
       </div>
 
       <div className="field">
-        <label>Idioma da transcrição</label>
+        <label>Transcription language</label>
         <select
           value={settings.whisperLanguage}
           onChange={(e) => update({ whisperLanguage: e.target.value as AppSettings['whisperLanguage'] })}
         >
-          <option value="auto">Detectar automaticamente</option>
-          <option value="pt">Português</option>
-          <option value="en">Inglês</option>
+          <option value="auto">Detect automatically</option>
+          <option value="pt">Portuguese</option>
+          <option value="en">English</option>
         </select>
         <span className="hint">
-          Forçar o idioma deixa a transcrição mais precisa quando a reunião é sempre no mesmo idioma.
+          Forcing the language sharpens the transcript when your meetings are always in the same one.
         </span>
       </div>
 
       <div className="field">
-        <label>Caminho do Python (opcional)</label>
+        <label>Python path (optional)</label>
         <input
           value={settings.pythonPath}
           onChange={(e) => update({ pythonPath: e.target.value })}
           placeholder="/opt/homebrew/bin/python3"
         />
         <span className="hint">
-          Deixe vazio para detecção automática. Use isto se o Whisper não for encontrado — precisa
-          ser um Python 3 com faster-whisper instalado.
+          Leave empty for automatic detection. Use this if Whisper cannot be found — it must be a
+          Python 3 with faster-whisper installed.
         </span>
       </div>
 
       <div className="row">
         <button className="btn btn-primary" onClick={handleSave}>
-          Salvar configurações
+          Save settings
         </button>
         {saved && (
           <span style={{ color: 'var(--ink-faint)', fontFamily: 'var(--mono)', fontSize: '12.5px' }}>
-            ✓ Salvo
+            ✓ Saved
           </span>
         )}
       </div>
