@@ -48,8 +48,14 @@ jobs:
         # parses and exits the way transcription.ts expects — the import of
         # faster-whisper happens after the argument check, so it is verified
         # separately below.
+        #
+        # The exit code has to be captured with `|| code=$?`: these steps run
+        # under `bash -e`, which would otherwise abort the step on the very
+        # non-zero exit this check exists to assert.
         run: |
-          python python/transcribe.py; test $? -eq 2
+          code=0
+          python python/transcribe.py || code=$?
+          test "$code" -eq 2
 
       - name: Check faster-whisper imports
         run: python -c "import faster_whisper; print('faster-whisper ok')"
