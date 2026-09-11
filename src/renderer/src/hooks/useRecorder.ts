@@ -1,0 +1,124 @@
+import { useCallback, useRef, useState } from 'react'
+
+interface UseRecorderResult {
+  isRecording: boolean
+  seconds: number
+  start: (opts: { micDeviceId?: string; captureSystemAudio: boolean }) => Promise<void>
+  stop: () => Promise<{ buffer: ArrayBuffer; durationSeconds: number } | null>
+  error: string | null
+}
+
+export function useRecorder(): UseRecorderResult {
+  const [isRecording, setIsRecording] = useState(false)
+  const [seconds, setSeconds] = useState(0)
+  const [error, setError] = useState<string | null>(null)
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
+  const streamsRef = useRef<MediaStream[]>([])
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const startedAtRef = useRef<number>(0)
+
+  const start = useCallback(
+    async (opts: { micDeviceId?: string; captureSystemAudio: boolean }) => {
+      setError(null)
+      chunksRef.current = []
+      streamsRef.current = []
+
+      try {
+        const micStream = await navigator.mediaDevices.getUserMedia({
+          audio: opts.micDeviceId ? { deviceId: { exact: opts.micDeviceId } } : true
+        })
+        streamsRef.current.push(micStream)
+
+        const audioCtx = new AudioContext()
+        audioContextRef.current = audioCtx
+        const destination = audioCtx.createMediaStreamDestination()
+
+        audioCtx.createMediaStreamSource(micStream).connect(destination)
+
+        if (opts.captureSystemAudio) {
+          try {
+            const sources = await window.api.audio.listDesktopSources()
+            const primary = sources[0]
+            if (primary) {
+              const systemStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                  mandatory: {
+                    chromeMediaSource: 'desktop'
+                  }
+                } as unknown as MediaTrackConstraints,
+                video: {
+                  mandatory: {
+                    chromeMediaSource: 'desktop',
+                    chromeMediaSourceId: primary.id,
+                    maxWidth: 1,
+                    maxHeight: 1
+                  }
+                } as unknown as MediaTrackConstraints
+              })
+              systemStream.getVideoTracks().forEach((t) => t.stop())
+              const audioOnlyTracks = systemStream.getAudioTracks()
+              if (audioOnlyTracks.length > 0) {
+                streamsRef.current.push(systemStream)
+                audioCtx.createMediaStreamSource(new MediaStream(audioOnlyTracks)).connect(destination)
+              }
+            }
+          } catch (sysErr) {
+            console.warn('Não foi possível capturar áudio do sistema:', sysErr)
+          }
+        }
+
+        const recorder = new MediaRecorder(destination.stream, { mimeType: 'audio/webm;codecs=opus' })
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunksRef.current.push(e.data)
+        }
+        recorder.start(1000)
+        mediaRecorderRef.current = recorder
+
+        startedAtRef.current = Date.now()
+        setSeconds(0)
+        timerRef.current = setInterval(() => {
+          setSeconds(Math.floor((Date.now() - startedAtRef.current) / 1000))
+        }, 500)
+
+        setIsRecording(true)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err))
+        throw err
+      }
+    },
+    []
+  )
+
+  const stop = useCallback(async (): Promise<{ buffer: ArrayBuffer; durationSeconds: number } | null> => {
+    const recorder = mediaRecorderRef.current
+    if (!recorder) return null
+
+    const durationSeconds = Math.floor((Date.now() - startedAtRef.current) / 1000)
+
+    const stopped = new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve()
+    })
+    recorder.stop()
+    await stopped
+
+    streamsRef.current.forEach((s) => s.getTracks().forEach((t) => t.stop()))
+    streamsRef.current = []
+    await audioContextRef.current?.close()
+    audioContextRef.current = null
+
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = null
+    setIsRecording(false)
+
+    const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+    chunksRef.current = []
+    const buffer = await blob.arrayBuffer()
+
+    return { buffer, durationSeconds }
+  }, [])
+
+  return { isRecording, seconds, start, stop, error }
+}

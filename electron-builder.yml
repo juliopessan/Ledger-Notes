@@ -1,0 +1,18 @@
+appId: com.juliopessan.ledger-notes
+productName: Ledger Notes
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+  - package.json
+mac:
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  extendInfo:
+    NSMicrophoneUsageDescription: >-
+      O Ledger Notes precisa acessar o microfone para gravar suas reuniões.
+    NSScreenCaptureDescription: >-
+      O Ledger Notes precisa capturar áudio do sistema para gravar os outros
+      participantes da chamada.
