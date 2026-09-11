@@ -96,7 +96,7 @@ python3 -m http.server 4173 --directory docs
 - The "untraceable items" check is a simple word-overlap heuristic, not a semantic check
 - The no-AI fallback (local heuristic) produces simpler notes than a language model would — key points are sentences sampled from the transcript, not a real synthesis
 - The packaged build (`dist:mac`) doesn't yet bundle a relocatable Python runtime, and isn't code-signed — see "Building for distribution" above
-- **System audio capture has not been re-tested since the Electron 44 upgrade.** The upgrade cleared the advisories that used to be open against Electron 33, and it also required migrating system audio off `getUserMedia({ chromeMediaSource: 'desktop' })`, an API newer Electron removed, onto `session.setDisplayMediaRequestHandler` with `audio: 'loopback'`. Lint, typecheck, build and app startup all pass, but a real recording — mic plus loopback — has not been run end to end. Do that before trusting a release
+- **Whisper's automatic language detection mis-fires on mixed-language audio.** Verified the hard way: a recording that opened with a few Portuguese words and then played English speech came back transcribed as phonetic Portuguese — "the quarterly budget review" became "de quarta ele budget, rívio". The audio was captured correctly; the language was not. If your meetings are reliably in one language, set it explicitly in Settings rather than leaving it on "Detect automatically"
 
 ## A note on SQLite
 
