@@ -715,6 +715,29 @@ h1.page-title {
    processed, what was just measured, and the view entering. Figures NEVER
    animate (a counter ticking up says nobody checked the value). */
 
+/* A failed run keeps its recording, so the error states what went wrong and
+   offers the way back rather than leaving the audio stranded. */
+.ledger-error {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ledger-rule);
+}
+.ledger-error p {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--clay);
+  margin: 0;
+  white-space: pre-wrap;
+}
+.ledger-error-note {
+  font-size: 12.5px;
+  color: var(--ledger-dim);
+  max-width: 46ch;
+}
+
 .process-line {
   display: flex;
   align-items: center;

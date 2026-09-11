@@ -6,9 +6,20 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import { settingsStore } from './store'
 
+/**
+ * ffmpeg-static reports its binary at a path that runs *through* app.asar once
+ * packaged — and an asar archive is a file, not a directory, so spawning it
+ * fails with ENOTDIR. electron-builder already copies the binary out to
+ * app.asar.unpacked; this just points at the copy. A no-op in dev, where no
+ * asar is involved.
+ */
+function ffmpegBinary(): string {
+  return (ffmpegPath as unknown as string).replace('app.asar', 'app.asar.unpacked')
+}
+
 function convertToWav(inputPath: string, outputPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const bin = ffmpegPath as unknown as string
+    const bin = ffmpegBinary()
     const proc = spawn(bin, [
       '-y',
       '-i', inputPath,
@@ -32,19 +43,35 @@ function pythonRoot(): string {
   return app.isPackaged ? join(process.resourcesPath, 'python') : join(app.getAppPath(), 'python')
 }
 
+const PY_BIN = process.platform === 'win32' ? 'python.exe' : 'python3'
+const PY_SCRIPTS_DIR = process.platform === 'win32' ? 'Scripts' : 'bin'
+
 /**
- * Resolves the Python interpreter, in order: the path the user configured, a
- * venv next to the script, and finally a system python3 (which still needs
- * faster-whisper installed).
+ * A venv the app owns, inside its own data folder.
+ *
+ * This is the one that matters for an installed build. The app bundle ships
+ * the sidecar script but no venv, and macOS system Pythons are externally
+ * managed (PEP 668), so `pip install` into them is refused — which leaves a
+ * downloaded .dmg with nowhere to get faster-whisper from. This path gives it
+ * a stable home that survives app updates.
+ */
+export function appVenvPython(): string {
+  return join(app.getPath('userData'), 'venv', PY_SCRIPTS_DIR, PY_BIN)
+}
+
+/**
+ * Resolves the Python interpreter, in order: the path configured in Settings,
+ * the app's own venv, a venv beside the script (how the dev checkout works),
+ * and finally a system python3 — which will only work if faster-whisper
+ * happens to be installed in it.
  */
 function resolvePythonBin(): string | null {
-  const bin = process.platform === 'win32' ? 'python.exe' : 'python3'
-  const scriptsDir = process.platform === 'win32' ? 'Scripts' : 'bin'
-
   const configured = settingsStore.get('pythonPath')
   if (configured && existsSync(configured)) return configured
 
-  const venvBin = join(pythonRoot(), '.venv', scriptsDir, bin)
+  if (existsSync(appVenvPython())) return appVenvPython()
+
+  const venvBin = join(pythonRoot(), '.venv', PY_SCRIPTS_DIR, PY_BIN)
   if (existsSync(venvBin)) return venvBin
 
   for (const systemBin of ['/opt/homebrew/bin/python3', '/usr/local/bin/python3', '/usr/bin/python3']) {
@@ -77,6 +104,22 @@ function runWhisperSidecar(wavPath: string, modelName: string, language: string)
     proc.on('error', reject)
     proc.on('close', (code) => {
       if (code !== 0) {
+        // The interpreter exists but has no faster-whisper. Raw stderr would
+        // send an installed user off to a project folder they never cloned, so
+        // replace it with the one recipe that works on macOS: a venv the app
+        // owns, since system Pythons are externally managed and refuse pip.
+        if (stderr.includes('faster-whisper is not installed')) {
+          const venvDir = join(app.getPath('userData'), 'venv')
+          reject(
+            new Error(
+              'Whisper is not set up yet. Run these two commands in Terminal, then try again:\n\n' +
+                `python3 -m venv "${venvDir}"\n` +
+                `"${join(venvDir, PY_SCRIPTS_DIR, 'pip')}" install faster-whisper\n\n` +
+                'The app looks there on its own — nothing to configure afterwards.'
+            )
+          )
+          return
+        }
         reject(new Error(`Whisper failed (code ${code}): ${stderr.trim().slice(-2000)}`))
         return
       }

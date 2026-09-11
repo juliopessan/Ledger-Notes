@@ -6,6 +6,11 @@ directories:
 files:
   - out/**/*
   - package.json
+# ffmpeg is spawned as a process, so it cannot live inside the asar archive —
+# a path running through app.asar fails with ENOTDIR. electron-builder's
+# heuristics happen to unpack it today; this makes that guaranteed.
+asarUnpack:
+  - node_modules/ffmpeg-static/**
 extraResources:
   - from: python
     to: python
@@ -18,15 +23,16 @@ mac:
   target:
     - target: dmg
       arch: [arm64]
-  # Build sem Developer ID: o app não é assinado nem notarizado, então o
-  # Gatekeeper pede um "abrir mesmo assim" na primeira execução. Assinar exige
-  # uma conta paga do Apple Developer Program.
+  # Built without a Developer ID: the app is neither signed nor notarised, so
+  # Gatekeeper asks for an explicit "open anyway" on first launch. Signing
+  # requires a paid Apple Developer Program account.
   identity: null
   hardenedRuntime: false
   gatekeeperAssess: false
+  # These two strings are what macOS shows in its own permission dialogs.
   extendInfo:
     NSMicrophoneUsageDescription: >-
-      O Ledger Notes precisa acessar o microfone para gravar suas reuniões.
+      Ledger Notes needs the microphone to record your meetings.
     NSScreenCaptureDescription: >-
-      O Ledger Notes precisa capturar áudio do sistema para gravar os outros
-      participantes da chamada.
+      Ledger Notes needs to capture system audio to record the other
+      participants on the call.

@@ -95,6 +95,25 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
     onChanged()
   }
 
+  const handleRetry = async (): Promise<void> => {
+    if (!id) return
+    setProgressMsg(null)
+    setProcessingSince(Date.now())
+    setMeeting((m) => (m ? { ...m, status: 'transcribing', errorMessage: null } : m))
+    try {
+      const m = await window.api.meetings.processRecording(id)
+      setMeeting(m)
+      setNotesDraft(m.notesMarkdown ?? '')
+      const t = await window.api.meetings.noteTraceability(id)
+      setTraceability(t)
+    } catch {
+      // processRecording already recorded the failure on the meeting; reload
+      // so the UI shows whatever it actually wrote there.
+      await load()
+    }
+    onChanged()
+  }
+
   const handleDelete = async (): Promise<void> => {
     if (!id) return
     if (!confirm('Delete this meeting and everything stored with it?')) return
@@ -204,9 +223,20 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
         )}
 
         {meeting.status === 'error' && meeting.errorMessage && (
-          <p style={{ color: 'var(--clay)', fontFamily: 'var(--mono)', fontSize: '12.5px' }}>
-            {meeting.errorMessage}
-          </p>
+          <div className="ledger-error">
+            <p>{meeting.errorMessage}</p>
+            {meeting.audioPath && (
+              <div className="row">
+                <button className="btn btn-primary" onClick={handleRetry}>
+                  Try transcribing again
+                </button>
+                <span className="ledger-error-note">
+                  The recording is still on disk — fixing the cause above and retrying
+                  costs nothing.
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

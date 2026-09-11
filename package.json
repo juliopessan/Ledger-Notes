@@ -1,7 +1,7 @@
 {
   "name": "ledger-notes",
   "version": "0.1.0",
-  "description": "Meeting notes that show their work — local-first, transcrição fiel e notas geradas claramente distintas",
+  "description": "Meeting notes that show their work — local-first, faithful transcripts and generated notes kept visibly distinct",
   "main": "./out/main/index.js",
   "author": "Julio Pessan",
   "private": true,

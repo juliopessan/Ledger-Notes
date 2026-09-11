@@ -67,7 +67,14 @@ Produces an unsigned `.dmg` for Apple Silicon in `dist/`. The `python/` sidecar 
 - Right-click the app → **Open** → **Open**. Only needed once.
 - Or strip the quarantine flag from a terminal: `xattr -d com.apple.quarantine "/Applications/Ledger Notes.app"`
 
-**One thing still genuinely open:** Python with `faster-whisper` must already be on the machine for transcription to work. The app bundles the sidecar script but not a runtime. Shipping a self-contained one (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) would remove that setup step and costs nothing but effort.
+**Installed builds need Whisper set up once.** The app bundles the sidecar script but not a Python runtime, and macOS system Pythons are externally managed (PEP 668), so `pip install` into them is refused. The app therefore looks for a venv it owns, inside its own data folder:
+
+```bash
+python3 -m venv ~/Library/Application\ Support/ledger-notes/venv
+~/Library/Application\ Support/ledger-notes/venv/bin/pip install faster-whisper
+```
+
+Nothing to configure afterwards — the app finds it. If transcription is attempted before that, the error in the app spells out these same two commands. Shipping a self-contained runtime (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) would remove the step entirely and costs effort rather than money.
 
 ## Development
 
