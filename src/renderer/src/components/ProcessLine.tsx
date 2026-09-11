@@ -16,8 +16,10 @@ export const NOTES_VERBS = [
 
 interface ProcessLineProps {
   verbs: string[]
-  /** The real message emitted by the main process. When there is one it wins:
-   *  it is what is actually happening, rather than the decorative rotation. */
+  /** The real message emitted by the main process. When a fresh one arrives it
+   *  is shown immediately — it is what is actually happening, not a guess.
+   *  Between real messages, which can be minutes apart on a long transcription,
+   *  the decorative rotation resumes so the view still reads as alive. */
   message?: string | null
   startedAt?: number
 }
@@ -31,16 +33,23 @@ function formatElapsed(seconds: number): string {
 }
 
 export default function ProcessLine({ verbs, message, startedAt }: ProcessLineProps): JSX.Element {
-  const [verbIndex, setVerbIndex] = useState(0)
+  const [label, setLabel] = useState(message || verbs[0])
   const [elapsed, setElapsed] = useState(0)
 
+  // A new real message wins immediately and resets the decorative cycle so
+  // the rotation always starts counting from the actual last known step.
   useEffect(() => {
-    if (message) return undefined
+    if (message) setLabel(message)
+  }, [message])
+
+  useEffect(() => {
+    let i = -1
     const interval = setInterval(() => {
-      setVerbIndex((i) => (i + 1) % verbs.length)
+      i = (i + 1) % verbs.length
+      setLabel(verbs[i])
     }, 2400)
     return () => clearInterval(interval)
-  }, [verbs.length, message])
+  }, [verbs, message])
 
   useEffect(() => {
     if (!startedAt) return undefined
@@ -49,8 +58,6 @@ export default function ProcessLine({ verbs, message, startedAt }: ProcessLinePr
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
   }, [startedAt])
-
-  const label = message ?? verbs[verbIndex]
 
   return (
     <p className="process-line">
