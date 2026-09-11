@@ -58,10 +58,12 @@ npm run dist:mac
 
 Produces an unsigned `.dmg` for Apple Silicon in `dist/`. The `python/` sidecar script is bundled into the app's resources, and at runtime the app resolves a Python interpreter in this order: the path set in Settings → a `.venv` next to the bundled script → a system `python3` (Homebrew, `/usr/local`, `/usr/bin`). That interpreter still needs `faster-whisper` installed.
 
-**Two caveats for anyone installing the packaged build:**
+**The build is deliberately unsigned.** Signing and notarising require a paid Apple Developer ID, and this project is free, local-only and has no distribution budget. That is a standing decision, not an oversight — so macOS will always warn on first launch. Two ways past it, both free:
 
-- It is **not signed or notarized** — signing requires a paid Apple Developer ID. On first launch macOS will refuse to open it; right-click the app → Open → Open to get past Gatekeeper.
-- Python with `faster-whisper` must be present on the machine for transcription to work. Bundling a self-contained Python runtime (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) is still open.
+- Right-click the app → **Open** → **Open**. Only needed once.
+- Or strip the quarantine flag from a terminal: `xattr -d com.apple.quarantine "/Applications/Ledger Notes.app"`
+
+**One thing still genuinely open:** Python with `faster-whisper` must already be on the machine for transcription to work. The app bundles the sidecar script but not a runtime. Shipping a self-contained one (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) would remove that setup step and costs nothing but effort.
 
 ## Development
 
