@@ -14,6 +14,7 @@ import {
 import { transcribeAudio } from './transcription'
 import { generateMeetingNotes, getNoteTraceability } from './notesAI'
 import { settingsStore, type AppSettings } from './store'
+import { NOTE_TEMPLATES } from '../shared/templates'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -82,7 +83,7 @@ function registerIpcHandlers(): void {
     return getMeeting(id)
   })
 
-  ipcMain.handle('meetings:create', (_e, title: string) => {
+  ipcMain.handle('meetings:create', (_e, title: string, templateId?: string) => {
     const id = uuidv4()
     const now = new Date().toISOString()
     const meeting: Meeting = {
@@ -95,7 +96,8 @@ function registerIpcHandlers(): void {
       transcript: null,
       notesMarkdown: null,
       status: 'recording',
-      errorMessage: null
+      errorMessage: null,
+      templateId: templateId || settingsStore.get('defaultTemplateId')
     }
     createMeeting(meeting)
     return meeting
@@ -128,7 +130,7 @@ function registerIpcHandlers(): void {
       updateMeeting(id, { transcript, status: 'generating_notes' })
 
       send('Gerando notas estruturadas com IA...')
-      const notesMarkdown = await generateMeetingNotes(transcript)
+      const notesMarkdown = await generateMeetingNotes(transcript, meeting.templateId)
       updateMeeting(id, { notesMarkdown, status: 'ready' })
 
       return getMeeting(id)
@@ -139,14 +141,15 @@ function registerIpcHandlers(): void {
     }
   })
 
-  ipcMain.handle('meetings:regenerateNotes', async (_e, id: string) => {
+  ipcMain.handle('meetings:regenerateNotes', async (_e, id: string, templateId?: string) => {
     const meeting = getMeeting(id)
     if (!meeting || !meeting.transcript) {
       throw new Error('Transcrição não disponível para esta reunião.')
     }
-    updateMeeting(id, { status: 'generating_notes' })
+    const nextTemplateId = templateId ?? meeting.templateId
+    updateMeeting(id, { status: 'generating_notes', templateId: nextTemplateId })
     try {
-      const notesMarkdown = await generateMeetingNotes(meeting.transcript)
+      const notesMarkdown = await generateMeetingNotes(meeting.transcript, nextTemplateId)
       updateMeeting(id, { notesMarkdown, status: 'ready' })
       return getMeeting(id)
     } catch (err) {
@@ -159,8 +162,10 @@ function registerIpcHandlers(): void {
   ipcMain.handle('meetings:noteTraceability', (_e, id: string) => {
     const meeting = getMeeting(id)
     if (!meeting?.notesMarkdown || !meeting.transcript) return { total: 0, untraceable: [] }
-    return getNoteTraceability(meeting.notesMarkdown, meeting.transcript)
+    return getNoteTraceability(meeting.notesMarkdown, meeting.transcript, meeting.templateId)
   })
+
+  ipcMain.handle('templates:list', () => NOTE_TEMPLATES)
 
   ipcMain.handle('audio:listDesktopSources', async () => {
     const sources = await desktopCapturer.getSources({ types: ['screen'] })

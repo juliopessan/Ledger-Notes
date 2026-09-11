@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { AppSettings } from '../types'
+import type { NoteTemplate } from '../../../shared/templates'
 
 export default function Settings(): JSX.Element {
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [templates, setTemplates] = useState<NoteTemplate[]>([])
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     window.api.settings.get().then(setSettings)
+    window.api.templates.list().then(setTemplates)
   }, [])
 
   if (!settings) return <div className="main-inner" />
@@ -76,6 +79,24 @@ export default function Settings(): JSX.Element {
       <div className="field">
         <label>Modelo OpenAI</label>
         <input value={settings.openaiModel} onChange={(e) => update({ openaiModel: e.target.value })} />
+      </div>
+
+      <div className="field">
+        <label>Template padrão das notas</label>
+        <select
+          value={settings.defaultTemplateId}
+          onChange={(e) => update({ defaultTemplateId: e.target.value })}
+        >
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+        <span className="hint">
+          Aplicado a novas gravações. Dá para trocar no momento de gravar, ou depois, regerando as
+          notas de uma reunião já transcrita.
+        </span>
       </div>
 
       <div className="field">

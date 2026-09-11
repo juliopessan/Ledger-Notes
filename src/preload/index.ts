@@ -1,11 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Meeting, AppSettings, NoteTraceability } from '../shared/types'
+import type { NoteTemplate } from '../shared/templates'
 
 const api = {
   meetings: {
     list: (): Promise<Meeting[]> => ipcRenderer.invoke('meetings:list'),
     get: (id: string): Promise<Meeting | undefined> => ipcRenderer.invoke('meetings:get', id),
-    create: (title: string): Promise<Meeting> => ipcRenderer.invoke('meetings:create', title),
+    create: (title: string, templateId?: string): Promise<Meeting> =>
+      ipcRenderer.invoke('meetings:create', title, templateId),
     delete: (id: string): Promise<boolean> => ipcRenderer.invoke('meetings:delete', id),
     rename: (id: string, title: string): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:rename', id, title),
@@ -15,8 +17,8 @@ const api = {
       ipcRenderer.invoke('meetings:saveAudio', id, buffer, durationSeconds),
     processRecording: (id: string): Promise<Meeting> =>
       ipcRenderer.invoke('meetings:processRecording', id),
-    regenerateNotes: (id: string): Promise<Meeting> =>
-      ipcRenderer.invoke('meetings:regenerateNotes', id),
+    regenerateNotes: (id: string, templateId?: string): Promise<Meeting> =>
+      ipcRenderer.invoke('meetings:regenerateNotes', id, templateId),
     noteTraceability: (id: string): Promise<NoteTraceability> =>
       ipcRenderer.invoke('meetings:noteTraceability', id),
     onProgress: (callback: (data: { id: string; message: string }) => void): (() => void) => {
@@ -29,6 +31,9 @@ const api = {
   audio: {
     listDesktopSources: (): Promise<{ id: string; name: string }[]> =>
       ipcRenderer.invoke('audio:listDesktopSources')
+  },
+  templates: {
+    list: (): Promise<NoteTemplate[]> => ipcRenderer.invoke('templates:list')
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),

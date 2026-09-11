@@ -12,6 +12,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<script>
+  // Só assume o estado escondido se houver como revelá-lo de volta.
+  if ('IntersectionObserver' in window) document.documentElement.className += ' js-anim';
+</script>
 <style>
   :root {
     --paper: #f2efe8;
@@ -275,8 +279,7 @@
     color: var(--ledger-ink);
   }
   .bar-track { height: 5px; background: var(--ledger-rule); }
-  .bar-fill { height: 100%; transform-origin: left center; transform: scaleX(0); }
-  .reveal.in .bar-fill { transform: scaleX(1); transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s; }
+  .bar-fill { height: 100%; transform-origin: left center; }
 
   .measured {
     display: flex;
@@ -361,6 +364,95 @@
   .swatch.mint { background: var(--mint); }
   .swatch.clay { background: var(--clay); }
 
+  /* ---------- Inline demo ---------- */
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 12px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .demo-grid { grid-template-columns: 1fr; } }
+
+  .demo-panel {
+    border: 1px solid var(--rule);
+    background: var(--paper-deep);
+    padding: 22px 24px;
+  }
+  .demo-k {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .demo-transcript {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    color: var(--ink-faint);
+  }
+  .demo-notes h4 {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin: 20px 0 10px;
+  }
+  .demo-notes h4:first-child { margin-top: 0; }
+  .note-item {
+    font-size: 13.5px;
+    color: var(--ink);
+    margin: 0 0 9px;
+    padding-left: 26px;
+    position: relative;
+    max-width: none;
+    line-height: 1.5;
+  }
+  .note-item::before {
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .note-item.ok::before { content: '✓'; background: var(--mint); color: var(--paper); }
+  .note-item.bad::before { content: '!'; background: var(--clay); color: var(--paper); }
+  .note-item.bad { color: var(--ink-soft); }
+  .demo-legend {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* ---------- Template chips ---------- */
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    background: var(--paper-deep);
+    color: var(--ink-soft);
+  }
+
   /* ---------- Download ---------- */
 
   .download {
@@ -421,17 +513,27 @@
 
   /* ---------- Motion ---------- */
 
-  .reveal {
+  /* Conteúdo é visível por padrão. O estado escondido só entra quando o script
+     confirma que consegue revelá-lo de volta — senão um JS quebrado deixaria a
+     página inteira em branco. */
+  .bar-fill { transform: scaleX(1); }
+
+  html.js-anim .reveal {
     opacity: 0;
     transform: translateY(14px);
     transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .reveal.in { opacity: 1; transform: none; }
+  html.js-anim .reveal.in { opacity: 1; transform: none; }
+  html.js-anim .reveal .bar-fill { transform: scaleX(0); }
+  html.js-anim .reveal.in .bar-fill {
+    transform: scaleX(1);
+    transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1) 0.15s;
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-    .reveal.in .bar-fill { transition: none; }
-    .bar-fill { transform: scaleX(1); }
+    html.js-anim .reveal { opacity: 1; transform: none; transition: none; }
+    html.js-anim .reveal .bar-fill,
+    html.js-anim .reveal.in .bar-fill { transform: scaleX(1); transition: none; }
     * { animation: none !important; }
   }
 </style>
@@ -445,7 +547,8 @@
       Ledger Notes
     </a>
     <div class="nav-links">
-      <a class="hide-sm" href="#problem">Why</a>
+      <a class="hide-sm" href="#demo">Notes</a>
+      <a class="hide-sm" href="#templates">Templates</a>
       <a class="hide-sm" href="#how">How it works</a>
       <a class="hide-sm" href="#privacy">Privacy</a>
       <a href="https://github.com/juliopessan/Ledger-Notes">GitHub</a>
@@ -475,6 +578,77 @@
       <p class="hero-note reveal">Free and open source · Apple Silicon · Bring your own API key</p>
       <div class="shot reveal">
         <img src="shot-ledger.png" alt="Ledger Notes showing a meeting's traceability ledger, with five generated items and four traced back to the transcript" />
+      </div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <div class="wrap">
+      <p class="eyebrow reveal">What it produces</p>
+      <h2 class="reveal">Raw transcript in. <span class="voice">Receipts out.</span></h2>
+      <p class="lede reveal">
+        You don't type anything during the call. The transcript goes in, structured notes come out —
+        and every decision and action carries a mark saying whether it was actually found in what
+        was said.
+      </p>
+
+      <div class="demo-grid reveal">
+        <div class="demo-panel">
+          <span class="demo-k">Transcript · measured</span>
+          <div class="demo-transcript">
+            "…a gente precisa decidir se mantém a data de outubro ou se empurra para novembro. O
+            time de backend ainda tem duas integrações pendentes, e o módulo de relatórios não vai
+            ficar pronto a tempo. Então ficou decidido o seguinte: manter a data de outubro e cortar
+            o módulo de relatórios do escopo. A Marina vai falar com o time de design ainda essa
+            semana…"
+          </div>
+        </div>
+
+        <div class="demo-panel">
+          <span class="demo-k">Generated notes · checked</span>
+          <div class="demo-notes">
+            <h4>Decisões</h4>
+            <p class="note-item ok">Manter a data de outubro e cortar o módulo de relatórios do escopo</p>
+            <p class="note-item bad">Contratar dois engenheiros de backend no próximo trimestre</p>
+            <h4>Ações</h4>
+            <p class="note-item ok">Marina fala com o time de design ainda essa semana</p>
+          </div>
+          <p class="demo-legend">
+            <span class="swatch mint"></span>found in the transcript
+            <span class="swatch clay" style="margin-left:18px"></span>not found — flagged for review
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="templates">
+    <div class="wrap">
+      <p class="eyebrow reveal">Templates</p>
+      <div class="split">
+        <div class="reveal">
+          <h2>A standup isn't a customer call.</h2>
+          <p>
+            Pick the meeting type and the notes come out shaped for it — a 1:1 gets feedback and
+            agreements, a client call gets objections and commitments, an interview gets signals and
+            open questions.
+          </p>
+          <p>
+            Each template also declares which of its sections make factual claims, so the
+            traceability check follows the structure instead of guessing at it. Change the template
+            on a meeting you already recorded and the notes are rewritten from the same transcript.
+          </p>
+        </div>
+        <div class="reveal">
+          <div class="chips">
+            <span class="chip">Reunião geral</span>
+            <span class="chip">1:1</span>
+            <span class="chip">Daily / Standup</span>
+            <span class="chip">Reunião com cliente</span>
+            <span class="chip">Entrevista</span>
+            <span class="chip">Planejamento / Kickoff</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -623,6 +797,63 @@
     </div>
   </section>
 
+  <section id="features">
+    <div class="wrap">
+      <p class="eyebrow reveal">Features</p>
+      <h2 class="reveal">What's actually in the box.</h2>
+      <div class="grid-3">
+        <div class="item reveal">
+          <span class="num">NO BOT</span>
+          <h3>Nobody sees it join</h3>
+          <p>
+            It records the audio on your machine, so no participant shows up in the call and nobody
+            gets a notification.
+          </p>
+        </div>
+        <div class="item reveal">
+          <span class="num">ANY APP</span>
+          <h3>Zoom, Meet, Teams, in person</h3>
+          <p>
+            Because it captures system audio rather than integrating with a platform, the meeting
+            app doesn't matter.
+          </p>
+        </div>
+        <div class="item reveal">
+          <span class="num">TEMPLATES</span>
+          <h3>Shaped by meeting type</h3>
+          <p>
+            Six built-in templates. Change one after the fact and the notes get rewritten from the
+            same transcript.
+          </p>
+        </div>
+        <div class="item reveal">
+          <span class="num">TRACEABILITY</span>
+          <h3>Every claim checked</h3>
+          <p>
+            Decisions and actions are matched back to the transcript, and what doesn't match is
+            flagged by name.
+          </p>
+        </div>
+        <div class="item reveal">
+          <span class="num">YOURS TO EDIT</span>
+          <h3>Plain Markdown</h3>
+          <p>
+            Notes are editable text, stored on your disk. Nothing is locked in a format you can't
+            read without the app.
+          </p>
+        </div>
+        <div class="item reveal">
+          <span class="num">OPEN SOURCE</span>
+          <h3>Read the whole thing</h3>
+          <p>
+            Including the prompt that writes your notes and the check that verifies them. No
+            accounts, no telemetry, no server.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="download">
     <div class="wrap">
       <div class="download reveal">
@@ -692,10 +923,30 @@
 
 <script>
   (function () {
-    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var targets = document.querySelectorAll('.reveal');
-    if (reduce || !('IntersectionObserver' in window)) {
+    var revealAll = function () {
       targets.forEach(function (el) { el.classList.add('in'); });
+    };
+
+    // Tudo que já está na viewport (ou acima dela) aparece de imediato, sem
+    // depender do observer: um renderizador que captura a página no load — ou
+    // um leitor que nunca rola — precisa ver conteúdo, não uma tela vazia.
+    // Roda de novo no 'load' porque um link com âncora pula a página depois
+    // desta primeira medição.
+    var revealVisible = function () {
+      targets.forEach(function (el) {
+        if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('in');
+      });
+    };
+    revealVisible();
+    window.addEventListener('load', revealVisible);
+
+    // Rede de segurança para o resto.
+    setTimeout(revealAll, 2500);
+
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) {
+      revealAll();
       return;
     }
     var io = new IntersectionObserver(function (entries) {

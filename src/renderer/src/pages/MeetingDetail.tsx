@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { Meeting, NoteTraceability } from '../types'
+import type { NoteTemplate } from '../../../shared/templates'
 import ProcessLine, { TRANSCRIBING_VERBS, NOTES_VERBS } from '../components/ProcessLine'
 
 function formatDuration(totalSeconds: number): string {
@@ -27,6 +28,12 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
   const [progressMsg, setProgressMsg] = useState<string | null>(null)
   const [processingSince, setProcessingSince] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
+  const [templates, setTemplates] = useState<NoteTemplate[]>([])
+  const [templateId, setTemplateId] = useState('')
+
+  useEffect(() => {
+    window.api.templates.list().then(setTemplates)
+  }, [])
 
   const load = useCallback(async () => {
     if (!id) return
@@ -34,6 +41,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
     if (m) {
       setMeeting(m)
       setNotesDraft(m.notesMarkdown ?? '')
+      setTemplateId((current) => current || m.templateId || 'general')
       if (m.status === 'ready') {
         const t = await window.api.meetings.noteTraceability(id)
         setTraceability(t)
@@ -74,7 +82,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
   const handleRegenerate = async (): Promise<void> => {
     if (!id) return
     setProgressMsg('Regenerando notas...')
-    const m = await window.api.meetings.regenerateNotes(id)
+    const m = await window.api.meetings.regenerateNotes(id, templateId)
     setMeeting(m)
     setNotesDraft(m.notesMarkdown ?? '')
     setProgressMsg(null)
@@ -233,12 +241,25 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
             <button className="btn btn-primary" onClick={handleSaveNotes} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar notas'}
             </button>
+            <select
+              className="template-select"
+              value={templateId}
+              onChange={(e) => setTemplateId(e.target.value)}
+              disabled={isProcessing}
+              title="Tipo de reunião usado para estruturar as notas"
+            >
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
             <button
               className="btn btn-ghost"
               onClick={handleRegenerate}
               disabled={!meeting.transcript || isProcessing}
             >
-              Regenerar notas
+              {templateId !== meeting.templateId ? 'Regerar com este template' : 'Regenerar notas'}
             </button>
             <button className="btn btn-ghost" onClick={handleDelete} style={{ marginLeft: 'auto' }}>
               Excluir reunião

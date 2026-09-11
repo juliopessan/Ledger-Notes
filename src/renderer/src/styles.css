@@ -13,9 +13,10 @@
   --clay-deep: #c8481c;
   --mint: #4f9c6b;
 
-  /* Sinal de gravação ativa — deliberadamente distinto de clay/mint, que
-     ficam reservados ao par verificado/não-verificado do Ledger. */
-  --rec: #d64545;
+  /* Acento de gravação. Aponta para clay por decisão de produto: o laranja
+     do Ledger é a cor da marca aqui, não só o sinal de "não verificado".
+     Trocar esta linha por um tom próprio volta a separar os dois papéis. */
+  --rec: var(--clay);
 
   --ledger-bg: #14140f;
   --ledger-ink: #efece4;
@@ -601,6 +602,16 @@ h1.page-title {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.template-select {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  padding: 10px 11px;
+  border: 1px solid var(--rule);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
 }
 
 .progress-line {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useRecorder } from '../hooks/useRecorder'
 import LevelMeter from '../components/LevelMeter'
 import type { AppSettings } from '../types'
+import type { NoteTemplate } from '../../../shared/templates'
 
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60)
@@ -16,17 +17,25 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
   const [title, setTitle] = useState('')
   const [meetingId, setMeetingId] = useState<string | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [templates, setTemplates] = useState<NoteTemplate[]>([])
+  const [templateId, setTemplateId] = useState('')
   const [captureSystemAudio, setCaptureSystemAudio] = useState(true)
   const { isRecording, seconds, level, start, stop, error } = useRecorder()
   const navigate = useNavigate()
   const startedRef = useRef(false)
 
   useEffect(() => {
-    window.api.settings.get().then(setSettings)
+    window.api.settings.get().then((s) => {
+      setSettings(s)
+      setTemplateId((current) => current || s.defaultTemplateId)
+    })
+    window.api.templates.list().then(setTemplates)
   }, [])
 
+  const selectedTemplate = templates.find((t) => t.id === templateId)
+
   const handleStart = async (): Promise<void> => {
-    const meeting = await window.api.meetings.create(title || 'Reunião sem título')
+    const meeting = await window.api.meetings.create(title || 'Reunião sem título', templateId)
     setMeetingId(meeting.id)
     onCreated()
     startedRef.current = true
@@ -59,6 +68,23 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ex: Alinhamento semanal — squad Produto"
           />
+        </div>
+
+        <div className="field">
+          <label>Tipo de reunião</label>
+          <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          {selectedTemplate && (
+            <span className="hint">
+              {selectedTemplate.description} Seções:{' '}
+              {selectedTemplate.sections.map((s) => s.heading).join(' · ')}
+            </span>
+          )}
         </div>
 
         <div className="field">
