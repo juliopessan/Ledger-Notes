@@ -3,6 +3,9 @@ import { useCallback, useRef, useState } from 'react'
 interface UseRecorderResult {
   isRecording: boolean
   seconds: number
+  /** Nível RMS do sinal capturado, 0–1. Medição real do áudio que está
+   *  entrando — a UI usa isso para mostrar que há som de verdade chegando. */
+  level: number
   start: (opts: { micDeviceId?: string; captureSystemAudio: boolean }) => Promise<void>
   stop: () => Promise<{ buffer: ArrayBuffer; durationSeconds: number } | null>
   error: string | null
@@ -11,6 +14,7 @@ interface UseRecorderResult {
 export function useRecorder(): UseRecorderResult {
   const [isRecording, setIsRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
+  const [level, setLevel] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -19,6 +23,7 @@ export function useRecorder(): UseRecorderResult {
   const audioContextRef = useRef<AudioContext | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startedAtRef = useRef<number>(0)
+  const rafRef = useRef<number | null>(null)
 
   const start = useCallback(
     async (opts: { micDeviceId?: string; captureSystemAudio: boolean }) => {
@@ -77,6 +82,22 @@ export function useRecorder(): UseRecorderResult {
         recorder.start(1000)
         mediaRecorderRef.current = recorder
 
+        const analyser = audioCtx.createAnalyser()
+        analyser.fftSize = 1024
+        destination.stream.getAudioTracks().length > 0 &&
+          audioCtx.createMediaStreamSource(destination.stream).connect(analyser)
+        const samples = new Float32Array(analyser.fftSize)
+
+        const readLevel = (): void => {
+          analyser.getFloatTimeDomainData(samples)
+          let sum = 0
+          for (let i = 0; i < samples.length; i++) sum += samples[i] * samples[i]
+          const rms = Math.sqrt(sum / samples.length)
+          setLevel(Math.min(1, rms * 4))
+          rafRef.current = requestAnimationFrame(readLevel)
+        }
+        rafRef.current = requestAnimationFrame(readLevel)
+
         startedAtRef.current = Date.now()
         setSeconds(0)
         timerRef.current = setInterval(() => {
@@ -111,6 +132,9 @@ export function useRecorder(): UseRecorderResult {
 
     if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = null
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    setLevel(0)
     setIsRecording(false)
 
     const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
@@ -120,5 +144,5 @@ export function useRecorder(): UseRecorderResult {
     return { buffer, durationSeconds }
   }, [])
 
-  return { isRecording, seconds, start, stop, error }
+  return { isRecording, seconds, level, start, stop, error }
 }

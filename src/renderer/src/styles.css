@@ -314,15 +314,73 @@ h1.page-title {
   align-items: center;
   gap: 9px;
 }
+/* O ponto só fica mint quando há de fato algo verificado. Enquanto processa
+   fica neutro, e em erro vira clay — mint nunca aparece sem lastro. */
 .ledger-head .live::before {
   content: '';
   width: 6px;
   height: 6px;
   border-radius: 50%;
+  background: var(--ledger-dim);
+  flex: none;
+}
+.ledger-head .live.is-ready::before {
   background: var(--ledger-mint);
+}
+.ledger-head .live.is-error::before {
+  background: var(--clay);
+}
+.ledger-head .live.is-working::before {
+  animation: pulse 1.6s ease-in-out infinite;
 }
 .ledger-head .meta {
   color: var(--ledger-dim);
+}
+
+/* Barras pareadas — o dispositivo central do Ledger. A distância entre a
+   barra clay (gerado) e a mint (rastreado) é o argumento do componente:
+   o leitor vê o déficit antes de ler qualquer palavra. */
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ledger-rule);
+}
+.bar-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ledger-dim);
+}
+.bar-label b {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ledger-ink);
+}
+.bar-track {
+  height: 5px;
+  background: var(--ledger-rule);
+}
+.bar-fill {
+  height: 100%;
+  transform-origin: left center;
+  animation: bar-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes bar-in {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .figs {
@@ -495,6 +553,22 @@ h1.page-title {
   animation: pulse 1.2s ease-in-out infinite;
 }
 
+.level-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 22px;
+}
+.level-seg {
+  width: 3px;
+  height: 100%;
+  background: var(--rule);
+  transition: background 0.08s linear;
+}
+.level-seg.on {
+  background: var(--ink-soft);
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -534,4 +608,151 @@ h1.page-title {
   font-size: 12px;
   color: var(--ink-faint);
   margin-top: 10px;
+}
+
+/* ---------- Movimento ----------
+   Contido por princípio: o sistema é sobre credibilidade, e animação demais
+   lê como enfeite. Só três coisas se movem — o que está sendo processado,
+   o que acabou de ser medido, e a entrada da view. Números NUNCA animam
+   (contador subindo denuncia que ninguém conferiu o valor). */
+
+.process-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+.spinner {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 1px solid var(--rule);
+  border-top-color: var(--ink-soft);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.ledger .process-line {
+  color: var(--ledger-dim);
+}
+.ledger .spinner {
+  border-color: var(--ledger-rule);
+  border-top-color: var(--ledger-ink);
+}
+
+.process-verb {
+  animation: verb-in 0.4s ease both;
+}
+
+.process-elapsed {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  opacity: 0.7;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes verb-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hairline varrendo o ledger enquanto há trabalho em andamento. */
+.ledger.is-working {
+  position: relative;
+  overflow: hidden;
+}
+.ledger.is-working::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ledger-dim), transparent);
+  animation: scan 2.4s ease-in-out infinite;
+}
+
+@keyframes scan {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Entrada da view: sobe 8px com stagger curto. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.main-inner > *,
+.center-state > * {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.main-inner > *:nth-child(2),
+.center-state > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.main-inner > *:nth-child(3),
+.center-state > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.main-inner > *:nth-child(4),
+.center-state > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.main-inner > *:nth-child(n + 5),
+.center-state > *:nth-child(n + 5) {
+  animation-delay: 160ms;
+}
+
+.meeting-item {
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.tab {
+  transition: color 0.15s ease, border-color 0.2s ease;
+}
+
+.btn {
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.status-dot {
+  transition: background 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

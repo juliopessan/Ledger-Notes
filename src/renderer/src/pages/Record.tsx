@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useRecorder } from '../hooks/useRecorder'
+import LevelMeter from '../components/LevelMeter'
 import type { AppSettings } from '../types'
 
 function formatTime(totalSeconds: number): string {
@@ -16,7 +17,7 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
   const [meetingId, setMeetingId] = useState<string | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [captureSystemAudio, setCaptureSystemAudio] = useState(true)
-  const { isRecording, seconds, start, stop, error } = useRecorder()
+  const { isRecording, seconds, level, start, stop, error } = useRecorder()
   const navigate = useNavigate()
   const startedRef = useRef(false)
 
@@ -93,6 +94,7 @@ export default function Record({ onCreated }: { onCreated: () => void }): JSX.El
         </p>
       </div>
       <div className="record-timer">{formatTime(seconds)}</div>
+      <LevelMeter level={level} />
       <p className="subtitle" style={{ margin: 0 }}>
         {title || 'Reunião sem título'}
       </p>

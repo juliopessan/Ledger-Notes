@@ -11,6 +11,7 @@ const defaults: AppSettings = {
   openaiModel: 'gpt-4o',
   whisperModel: 'small',
   whisperLanguage: 'auto',
+  pythonPath: '',
   micDeviceId: '',
   systemAudioDeviceId: ''
 }

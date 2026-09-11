@@ -6,9 +6,23 @@ directories:
 files:
   - out/**/*
   - package.json
+extraResources:
+  - from: python
+    to: python
+    filter:
+      - transcribe.py
+      - requirements.txt
 mac:
   category: public.app-category.productivity
-  hardenedRuntime: true
+  icon: resources/icon.icns
+  target:
+    - target: dmg
+      arch: [arm64]
+  # Build sem Developer ID: o app não é assinado nem notarizado, então o
+  # Gatekeeper pede um "abrir mesmo assim" na primeira execução. Assinar exige
+  # uma conta paga do Apple Developer Program.
+  identity: null
+  hardenedRuntime: false
   gatekeeperAssess: false
   extendInfo:
     NSMicrophoneUsageDescription: >-

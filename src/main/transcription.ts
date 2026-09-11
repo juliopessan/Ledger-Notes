@@ -27,26 +27,47 @@ function convertToWav(inputPath: string, outputPath: string): Promise<void> {
   })
 }
 
-function pythonVenvPath(): string {
+/** Raiz do sidecar: dentro do bundle quando empacotado, na pasta do projeto em dev. */
+function pythonRoot(): string {
+  return app.isPackaged ? join(process.resourcesPath, 'python') : join(app.getAppPath(), 'python')
+}
+
+/**
+ * Resolve o interpretador Python, em ordem: caminho configurado pelo usuário,
+ * venv ao lado do script, e por último um python3 do sistema (que precisa ter
+ * faster-whisper instalado).
+ */
+function resolvePythonBin(): string | null {
   const bin = process.platform === 'win32' ? 'python.exe' : 'python3'
   const scriptsDir = process.platform === 'win32' ? 'Scripts' : 'bin'
-  return join(app.getAppPath(), 'python', '.venv', scriptsDir, bin)
+
+  const configured = settingsStore.get('pythonPath')
+  if (configured && existsSync(configured)) return configured
+
+  const venvBin = join(pythonRoot(), '.venv', scriptsDir, bin)
+  if (existsSync(venvBin)) return venvBin
+
+  for (const systemBin of ['/opt/homebrew/bin/python3', '/usr/local/bin/python3', '/usr/bin/python3']) {
+    if (existsSync(systemBin)) return systemBin
+  }
+
+  return null
 }
 
 function runWhisperSidecar(wavPath: string, modelName: string, language: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const pythonBin = pythonVenvPath()
-    if (!existsSync(pythonBin)) {
+    const pythonBin = resolvePythonBin()
+    if (!pythonBin) {
       reject(
         new Error(
-          'Ambiente Python do Whisper não encontrado. Rode: cd python && python3 -m venv .venv && ' +
-            'source .venv/bin/activate && pip install -r requirements.txt'
+          'Nenhum interpretador Python encontrado. Instale o Python 3 e rode o setup do Whisper ' +
+            '(veja o README), ou aponte o caminho do Python em Configurações.'
         )
       )
       return
     }
 
-    const scriptPath = join(app.getAppPath(), 'python', 'transcribe.py')
+    const scriptPath = join(pythonRoot(), 'transcribe.py')
     const proc = spawn(pythonBin, [scriptPath, wavPath, modelName, language])
 
     let stdout = ''

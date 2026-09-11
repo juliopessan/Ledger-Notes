@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { Meeting, NoteTraceability } from '../types'
+import ProcessLine, { TRANSCRIBING_VERBS, NOTES_VERBS } from '../components/ProcessLine'
 
 function formatDuration(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60)
@@ -24,6 +25,7 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
   const [notesDraft, setNotesDraft] = useState('')
   const [traceability, setTraceability] = useState<NoteTraceability>({ total: 0, untraceable: [] })
   const [progressMsg, setProgressMsg] = useState<string | null>(null)
+  const [processingSince, setProcessingSince] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -53,9 +55,11 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
   useEffect(() => {
     if (!meeting) return
     if (meeting.status === 'transcribing' || meeting.status === 'generating_notes') {
+      setProcessingSince((since) => since ?? Date.now())
       const interval = setInterval(load, 2000)
       return () => clearInterval(interval)
     }
+    setProcessingSince(null)
     return undefined
   }, [meeting, load])
 
@@ -96,6 +100,13 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
   const { total: totalClaims, untraceable } = traceability
   const tracedCount = totalClaims - untraceable.length
   const tracedPct = totalClaims > 0 ? Math.round((tracedCount / totalClaims) * 100) : 0
+  const liveStateClass = isProcessing
+    ? 'is-working'
+    : meeting.status === 'error'
+      ? 'is-error'
+      : meeting.status === 'ready'
+        ? 'is-ready'
+        : ''
 
   return (
     <div className="main-inner">
@@ -106,9 +117,9 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
         <span className="voice">o que ficou registrado, não o que deveria ter sido dito.</span>
       </p>
 
-      <div className="ledger">
+      <div className={`ledger ${isProcessing ? 'is-working' : ''}`}>
         <div className="ledger-head">
-          <span className="live">{statusMessage[meeting.status]}</span>
+          <span className={`live ${liveStateClass}`}>{statusMessage[meeting.status]}</span>
           <span className="meta">whisper local · transcrição + notas por IA</span>
         </div>
 
@@ -166,7 +177,13 @@ export default function MeetingDetail({ onChanged }: { onChanged: () => void }):
           </div>
         )}
 
-        {isProcessing && progressMsg && <p className="progress-line">{progressMsg}</p>}
+        {isProcessing && (
+          <ProcessLine
+            verbs={meeting.status === 'transcribing' ? TRANSCRIBING_VERBS : NOTES_VERBS}
+            message={progressMsg}
+            startedAt={processingSince ?? undefined}
+          />
+        )}
 
         {meeting.status === 'error' && meeting.errorMessage && (
           <p style={{ color: 'var(--clay)', fontFamily: 'var(--mono)', fontSize: '12.5px' }}>

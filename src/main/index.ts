@@ -25,6 +25,8 @@ function createWindow(): void {
     minHeight: 640,
     show: false,
     titleBarStyle: 'hiddenInset',
+    icon: join(app.getAppPath(), 'resources', 'icon.png'),
+    backgroundColor: '#f2efe8',
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false

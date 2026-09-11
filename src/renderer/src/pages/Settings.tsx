@@ -110,6 +110,19 @@ export default function Settings(): JSX.Element {
         </span>
       </div>
 
+      <div className="field">
+        <label>Caminho do Python (opcional)</label>
+        <input
+          value={settings.pythonPath}
+          onChange={(e) => update({ pythonPath: e.target.value })}
+          placeholder="/opt/homebrew/bin/python3"
+        />
+        <span className="hint">
+          Deixe vazio para detecção automática. Use isto se o Whisper não for encontrado — precisa
+          ser um Python 3 com faster-whisper instalado.
+        </span>
+      </div>
+
       <div className="row">
         <button className="btn btn-primary" onClick={handleSave}>
           Salvar configurações

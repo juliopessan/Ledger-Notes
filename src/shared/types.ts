@@ -24,6 +24,8 @@ export interface AppSettings {
   openaiModel: string
   whisperModel: 'tiny' | 'base' | 'small' | 'medium' | 'large-v3'
   whisperLanguage: 'auto' | 'pt' | 'en'
+  /** Caminho opcional para um Python 3 com faster-whisper instalado. Vazio = detecção automática. */
+  pythonPath: string
   micDeviceId: string
   systemAudioDeviceId: string
 }
