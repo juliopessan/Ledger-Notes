@@ -2,21 +2,23 @@
 
 **The AI notepad for back-to-back meetings.**
 
-App de notas de reunião com IA, 100% local, inspirado no [Granola](https://www.granola.ai/). O nome vem do design system que a UI usa: a transcrição é o dado *medido* (o que foi realmente dito) e as notas geradas por IA são a *asserção* — a interface nunca deixa as duas coisas parecerem iguais.
+![Ledger Notes — home screen](docs/screenshot.png)
 
-- Grava microfone + áudio do sistema (a chamada inteira, não só sua voz)
-- Transcreve localmente com [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — o áudio nunca sai da sua máquina
-- Gera notas estruturadas (resumo, decisões, ações) usando Claude ou GPT — você escolhe e usa sua própria chave de API
-- Sem chave de API configurada, ainda gera notas básicas por heurística local (extraídas direto da transcrição, nunca inventadas) em vez de travar
-- Sinaliza na interface qualquer item das notas que não foi encontrado na transcrição (checagem de alucinação), usando o design system **Ledger**: verde = rastreado à transcrição, laranja = não confirmado
+A local-first AI meeting notepad inspired by [Granola](https://www.granola.ai/). The name comes from the design system the UI is built on: the transcript is the *measured* claim (what was actually said), AI-generated notes are the *assertion* — and the interface never lets the two look alike.
 
-## Como rodar
+- Records mic + system audio (the whole call, not just your voice)
+- Transcribes locally with [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — audio never leaves your machine
+- Generates structured notes (summary, decisions, action items) using Claude or GPT — bring your own API key
+- No API key configured? It still produces basic notes via a local heuristic (extracted straight from the transcript, never invented) instead of blocking you
+- Flags any note item that couldn't be matched back to the transcript (a lightweight hallucination check), using the **Ledger** design system: mint = traced to the transcript, clay = unconfirmed
+
+## Getting started
 
 ```bash
 npm install
 ```
 
-A transcrição roda num sidecar Python (`faster-whisper`) chamado pelo processo principal do Electron. Configure o ambiente uma vez:
+Transcription runs in a Python sidecar (`faster-whisper`) spawned by the Electron main process. Set it up once:
 
 ```bash
 cd python
@@ -26,59 +28,59 @@ pip install -r requirements.txt
 cd ..
 ```
 
-Depois:
+Then:
 
 ```bash
 npm run dev
 ```
 
-Na primeira transcrição, o modelo Whisper escolhido em Configurações é baixado automaticamente (alguns minutos, dependendo do tamanho do modelo).
+On the first transcription, the Whisper model you picked in Settings downloads automatically (a few minutes, depending on the model size).
 
-## Configuração necessária
+## Configuration
 
-1. Abra **Configurações** no app.
-2. (Opcional) Escolha o provedor de IA para as notas (Anthropic ou OpenAI) e cole sua chave de API — sem chave, o app ainda funciona com notas por heurística local.
-3. Escolha o modelo Whisper (`small` é um bom equilíbrio entre velocidade e precisão) e o idioma da transcrição.
+1. Open **Settings** in the app.
+2. (Optional) Pick an AI provider for notes (Anthropic or OpenAI) and paste your API key — without one, the app still works with locally-generated heuristic notes.
+3. Pick the Whisper model (`small` is a good speed/accuracy balance) and the transcription language.
 
-## Permissões no macOS
+## macOS permissions
 
-Para capturar o áudio do sistema (outros participantes da chamada), o macOS pede permissão de **Gravação de Tela** na primeira vez — vá em Ajustes do Sistema → Privacidade e Segurança → Gravação de Tela e habilite o app.
+To capture system audio (the other participants on the call), macOS asks for **Screen Recording** permission the first time — go to System Settings → Privacy & Security → Screen Recording and enable the app.
 
-## Build para distribuição
+## Building for distribution
 
 ```bash
 npm run dist:mac
 ```
 
-**Atenção:** o venv Python não é portável entre máquinas por padrão (caminhos absolutos no shebang). Para distribuir o app empacotado, é preciso embutir um runtime Python relocável (ex: [python-build-standalone](https://github.com/indygreg/python-build-standalone) ou PyInstaller compilando `python/transcribe.py`) — fora do escopo deste MVP, que roda em modo desenvolvimento na máquina de quem o construiu.
+**Note:** the Python venv isn't portable across machines by default (absolute paths in its shebang lines). Shipping a packaged build requires bundling a relocatable Python runtime (e.g. [python-build-standalone](https://github.com/indygreg/python-build-standalone) or a PyInstaller build of `python/transcribe.py`) — out of scope for this dev-mode MVP.
 
-## Arquitetura
+## Architecture
 
-- `src/main` — processo principal Electron: armazenamento (JSON local em `~/Library/Application Support/ledger-notes`), transcrição (ffmpeg + sidecar Python `faster-whisper`), geração de notas (Anthropic/OpenAI SDK, com fallback heurístico local)
-- `python/transcribe.py` — script Python standalone que roda `faster-whisper` sobre um WAV e imprime `{"text": "..."}` em stdout; chamado via `child_process.spawn` pelo main process
-- `src/preload` — ponte segura `contextBridge` entre main e renderer
-- `src/renderer` — UI em React, design system Ledger (`src/renderer/src/styles.css`)
-- `src/shared/types.ts` — tipos compartilhados entre os três processos
+- `src/main` — Electron main process: storage (local JSON in `~/Library/Application Support/ledger-notes`), transcription (ffmpeg + the `faster-whisper` Python sidecar), note generation (Anthropic/OpenAI SDK, with a local heuristic fallback)
+- `python/transcribe.py` — standalone Python script that runs `faster-whisper` over a WAV file and prints `{"text": "..."}` to stdout; invoked via `child_process.spawn` from the main process
+- `src/preload` — the `contextBridge` bridge between main and renderer
+- `src/renderer` — React UI, built on the Ledger design system (`src/renderer/src/styles.css`)
+- `src/shared/types.ts` — types shared across all three processes
 
-## Limitações conhecidas do MVP
+## Known limitations (MVP)
 
-- Transcrição roda após o fim da gravação (não é ao vivo, palavra por palavra)
-- Armazenamento em arquivo JSON único — adequado para dezenas/centenas de reuniões; migrar para SQLite se o volume crescer muito (vide nota sobre Xcode Command Line Tools abaixo)
-- A checagem de "itens não rastreáveis" é uma heurística simples de sobreposição de palavras, não uma verificação semântica
-- O fallback sem IA (heurística local) produz notas mais simples que um modelo de linguagem — pontos principais são frases extraídas da transcrição por amostragem, não uma síntese real
-- Build empacotado (`dist:mac`) ainda não embute um runtime Python relocável — veja "Build para distribuição" acima
+- Transcription runs after the recording ends (not live, word-by-word)
+- Storage is a single JSON file — fine for dozens/hundreds of meetings; migrate to SQLite if volume grows a lot (see the SQLite note below)
+- The "untraceable items" check is a simple word-overlap heuristic, not a semantic check
+- The no-AI fallback (local heuristic) produces simpler notes than a language model would — key points are sentences sampled from the transcript, not a real synthesis
+- The packaged build (`dist:mac`) doesn't yet bundle a relocatable Python runtime — see "Building for distribution" above
 
-## Nota sobre SQLite
+## A note on SQLite
 
-O projeto usa um armazenamento em JSON (`src/main/db.ts`) em vez de `better-sqlite3` porque as Xcode Command Line Tools desta máquina estavam com os receipts corrompidos no momento da criação do projeto, impedindo a compilação do módulo nativo. Para migrar para SQLite:
+The project uses JSON file storage (`src/main/db.ts`) instead of `better-sqlite3` because this machine's Xcode Command Line Tools had corrupted receipts at the time the project was created, blocking the native module build. To migrate to SQLite:
 
 ```bash
 sudo rm -rf /Library/Developer/CommandLineTools
 xcode-select --install
 ```
 
-Depois disso, `npm install better-sqlite3 @types/better-sqlite3` e reescrever `src/main/db.ts` mantendo a mesma API pública (`createMeeting`, `updateMeeting`, `getMeeting`, `listMeetings`, `deleteMeeting`).
+Then `npm install better-sqlite3 @types/better-sqlite3` and rewrite `src/main/db.ts`, keeping the same public API (`createMeeting`, `updateMeeting`, `getMeeting`, `listMeetings`, `deleteMeeting`).
 
-## Créditos
+## Credits
 
-A escolha de `faster-whisper` como motor de transcrição local e o padrão de fallback heurístico sem chave de API foram inspirados na arquitetura do [sessao-star](https://github.com/juliopessan/sessao-star), outro projeto local-first do mesmo autor.
+The choice of `faster-whisper` as the local transcription engine, and the no-API-key heuristic fallback pattern, were inspired by the architecture of [sessao-star](https://github.com/juliopessan/sessao-star), another local-first project by the same author.
